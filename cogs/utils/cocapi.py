@@ -1,5 +1,5 @@
-import aiohttp
 import asyncio
+import aiohttp
 import json
 from urllib.parse import quote, urlencode
 
@@ -36,6 +36,7 @@ def wrap_response(resp, api_call):
         :rtype: object, list or dict
     """
     try:
+
         js_resp = resp.json()
         if resp.ok:
             if "items" in js_resp.keys():
@@ -108,11 +109,10 @@ class ApiCall(object):
             api.clans(name='theclan', minMembers=10)
     """
 
-    def __init__(self, bearer_token, endpoint, api_version, connection,
+    def __init__(self, bot, endpoint, api_version, connection=None,
                  extract_items=True, uri_parts=None, uri_args={}):
         """ Construct an ApiCall object.
 
-            :param str bearer_token: the API key provided
             :param str endpoint: The endpoint od the API
             :param str api_version: The version of the API. Used to build the API url
             :param boolean extract_items: If true, response will be parsed and wraped
@@ -122,15 +122,18 @@ class ApiCall(object):
                 recursive calls by the `__getattr__` and `__call__` methods.
             :param dict uri_args: arguments of the call.
         """
-        self.bearer_token = bearer_token
+        self.bot = bot
+        self.bearer_token = ''
         self.endpoint = endpoint
         self.api_version = api_version
         self.extract_items = extract_items
         self.uri_args = uri_args
 
-        # print(connection.bot_token, 'yes')
-        self.loop = asyncio.get_event_loop()
-        self._session = aiohttp.ClientSession(loop=self.loop)
+        if not connection:
+            loop = asyncio.get_event_loop()
+            self._session = aiohttp.ClientSession(loop=loop)
+        else:
+            self._session = connection
 
         if uri_parts is None:
             self.uri_parts = ()
@@ -147,8 +150,7 @@ class ApiCall(object):
         if k.startswith("connection"):
             pass
         else:
-            print(k)
-            return ApiCall(self.bearer_token, self.endpoint, self.api_version, self.connection,
+            return ApiCall(self.bot, self.endpoint, self.api_version, self.connection,
                            extract_items=self.extract_items,
                            uri_parts=self.uri_parts + (k,), uri_args=self.uri_args)
 
@@ -162,7 +164,7 @@ class ApiCall(object):
                 uri_args = self.uri_args.copy()
                 uri_args.update(kwargs)
 
-            return ApiCall(self.bearer_token, self.endpoint, self.api_version, self.connection,
+            return ApiCall(self.bot, self.endpoint, self.api_version, self.connection,
                            extract_items=self.extract_items,
                            uri_parts=self.uri_parts + args, uri_args=uri_args)
         return self
@@ -178,19 +180,34 @@ class ApiCall(object):
         async with self._session.request(method, url, headers=self.build_headers()) as r:
             data = await json_or_text(r)
 
-        print(data)
-
         if self.extract_items:
-            return wrap_response(data, self)
+            wrapped = wrap_response(data, self)
+            try:
+                reason = wrapped['reason']
+                if reason == 'invalidIP':
+                    # self.bearer_token = new_token
+                    # self.bot.update_coc_token(new_token)
+                    await self._process_call(method)
+            except KeyError:
+                return wrapped
         else:
-            return data
+            try:
+                reason = data['reason']
+                if reason == 'invalidIP':
+                    # self.bearer_token = new_token
+                    # self.bot.update_coc_token(new_token)
+                    await self._process_call(method)
+            except KeyError:
+                return data
 
-    async def get(self):
+    async def get(self, new_token):
         ''' Execute a GET API call given by the `uri_parts` stored.'''
+        self.bearer_token = new_token
         return await self._process_call('get')
 
-    async def post(self):
+    async def post(self, new_token):
         ''' Execute a POST API call given by the `uri_parts` stored.'''
+        self.bearer_token = new_token
         return await self._process_call('post')
 
 
@@ -245,7 +262,7 @@ class ClashOfClans(ApiCall):
     """
 
     def __init__(self,
-                 bearer_token,
+                 bot,
                  connection,
                  endpoint='https://api.clashofclans.com',
                  api_version='v1',
@@ -259,9 +276,13 @@ class ClashOfClans(ApiCall):
                     dictionary. Otherwise, the requests response will be returned.
         """
         super(ClashOfClans, self).__init__(
-            bearer_token=bearer_token,
+            bot=bot,
             connection=connection,
             endpoint=endpoint,
             api_version=api_version,
             extract_items=extract_items,
             uri_parts=None)
+
+
+class COCToken:
+    pass
