@@ -52,21 +52,21 @@ class ClaimExemptCommands:
                                        f'{member.display_name}#{member.discriminator} ({member.id})')
         if player_tag.startswith('#'):
             try:
-                cocplayer = await self.bot.get_coc().players(f'{player_tag}').get()
+                cocplayer = await self.bot.coc.players(player_tag).get(self.bot.coc_token)
             except KeyError:
                 raise commands.BadArgument(f'Player tag `{player_tag}` not found!')
         else:
             # search aw players for x ign, then search a4w
-            aw_members = await self.bot.get_coc().clans('#P0LYJC8C').members.get()
+            aw_members = await self.bot.coc.clans('#P0LYJC8C').members.get(self.bot.coc_token)
             for awm in aw_members['items']:
                 if awm['name'] == player_tag:
-                    cocplayer = await self.bot.get_coc().players(awm['tag']).get()
+                    cocplayer = await self.bot.coc.players(awm['tag']).get(self.bot.coc_token)
                     break
             else:
-                a4w_members = await self.bot.get_coc().clans('#808URP9P').members.get()
+                a4w_members = await self.bot.coc.clans('#808URP9P').members.get(self.bot.coc_token)
                 for a4wm in a4w_members['items']:
                     if a4wm['name'] == player_tag:
-                        cocplayer = await self.bot.get_coc().players(a4wm['tag']).get()
+                        cocplayer = await self.bot.coc.players(a4wm['tag']).get(self.bot.coc_token)
                         break
                 else:
                     raise commands.BadArgument(f"I have checked in AW and A4W "
@@ -182,7 +182,7 @@ class ClaimExemptCommands:
 
     @commands.command(aliases=['awgm'])
     async def aw_get_members(self, ctx):
-        clan_members = await self.bot.get_coc().clans('#P0LYJC8C').members.get()
+        clan_members = await self.bot.coc.clans('#P0LYJC8C').members.get(self.bot.coc_token)
 
         query = "SELECT ign, tag, userid FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussie Warriors')
@@ -210,7 +210,7 @@ class ClaimExemptCommands:
 
     @commands.command(aliases=['a4wgm'])
     async def a4w_get_members(self, ctx):
-        clan_members = await self.bot.get_coc().clans('#808URP9P').members.get()
+        clan_members = await self.bot.coc.clans('#808URP9P').members.get()
 
         query = "SELECT tag, ign, userid FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussies 4 War')

@@ -2,6 +2,7 @@ from discord.ext import commands
 import datetime
 from cogs.utils import db
 
+
 class Season(db.Table):
     id = db.PrimaryKeyColumn()
 
@@ -60,7 +61,7 @@ class UpdateCommands:
         await self.bot.pool.execute(query, user_id, average_donations, warn)
 
     async def download_starting_donations(self, tag):
-        player = await self.bot.get_coc().players(tag).get()
+        player = await self.bot.coc.players(tag).get(self.bot.coc_token)
 
         for achievement in player['achievements']:
             if achievement['name'] == 'Friend in Need':
@@ -101,7 +102,7 @@ class UpdateCommands:
         dump = await self.bot.pool.fetch(query, user_id)
 
         for individual in dump:
-            player = await self.bot.get_coc().players(individual['tag']).get()
+            player = await self.bot.coc.players(individual['tag']).get(self.bot.coc_token)
 
             for achievement in player['achievements']:
                 if achievement['name'] == 'Friend in Need':
@@ -123,7 +124,7 @@ class UpdateCommands:
         dump = await self.bot.pool.fetch(query)
 
         for individual in dump:
-            player = await self.bot.get_coc().players(individual['tag']).get()
+            player = await self.bot.coc.players(individual['tag']).get(self.bot.coc_token)
 
             for achievement in player['achievements']:
                 if achievement['name'] == 'Friend in Need':
