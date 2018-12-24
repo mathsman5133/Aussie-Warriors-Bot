@@ -59,7 +59,7 @@ class AWBot(commands.Bot):
                                                   (resolver=aiohttp.AsyncResolver,
                                                    family=socket.AF_INET))
 
-        self.loaded = creds
+        # self.loaded = creds
         # self.coc_token = self.loaded['coctoken']
         self.coc = ClashOfClans(connection=self.http_session, bot=self)
 
