@@ -12,35 +12,38 @@ import click
 import aiohttp
 import socket
 
+import git
+
 from cogs.utils.cocapi import ClashOfClans
 from cogs.utils.db import Table
 from cogs.utils import context
 
-# json_location = os.path.join(os.getcwd(), 'creds.json')
-
+json_location = os.path.join(os.getcwd(), 'creds.json')
+REPO_PATH = os.path.join(os.getcwd())
 BOT_TOKEN = ''
 
 initial_extensions = [
                       'cogs.claim',
                       'cogs.update_donations',
                       'cogs.donations',
+                      'cogs.admin'
                       ]
 
-# with open(json_location) as creds:
-#     creds = json.load(creds)
+with open(json_location) as creds:
+    creds = json.load(creds)
 
 
 def run_bot():
-    # loop = asyncio.get_event_loop()
-    #
-    # try:
-    #     pool = loop.run_until_complete(Table.create_pool(creds['postgresql'], command_timeout=60))
-    # except Exception as e:
-    #     click.echo('Could not set up PostgreSQL. Exiting.', file=sys.stderr)
-    #     return
+    loop = asyncio.get_event_loop()
+
+    try:
+        pool = loop.run_until_complete(Table.create_pool(creds['postgresql'], command_timeout=60))
+    except Exception as e:
+        click.echo('Could not set up PostgreSQL. Exiting.', file=sys.stderr)
+        return
 
     bot = AWBot()
-    # bot.pool = pool  # add db as attribute
+    bot.pool = pool  # add db as attribute
     bot.run()  # run bot
 
 
@@ -59,9 +62,12 @@ class AWBot(commands.Bot):
                                                   (resolver=aiohttp.AsyncResolver,
                                                    family=socket.AF_INET))
 
-        # self.loaded = creds
-        # self.coc_token = self.loaded['coctoken']
+        self.loaded = creds
+        self.coc_token = self.loaded['coctoken']
         self.coc = ClashOfClans(connection=self.http_session, bot=self)
+
+        self.repo = git.Repo(REPO_PATH)
+        print(self.repo)
 
     async def on_message(self, message):
         if message.author.bot:
@@ -118,8 +124,8 @@ class AWBot(commands.Bot):
 
     def run(self):
         try:
-            super().run(BOT_TOKEN)
-            # super().run(creds['bottoken'])
+            # super().run(BOT_TOKEN)
+            super().run(creds['bottoken'])
         except Exception as e:
             print(e)
 
