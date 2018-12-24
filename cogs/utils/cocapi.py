@@ -187,7 +187,7 @@ class ApiCall(object):
                 if reason == 'invalidIP':
                     # self.bearer_token = new_token
                     # self.bot.update_coc_token(new_token)
-                    await self._process_call(method)
+                    return await self._process_call(method)
             except KeyError:
                 return wrapped
         else:
