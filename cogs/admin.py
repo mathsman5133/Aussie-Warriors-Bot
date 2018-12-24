@@ -288,6 +288,22 @@ class Admin:
             for member in self.bot.get_guild(352298238180851712).get_role(390068631708499971).members:
                 writer.writerow({'Name': member.name, 'ID': member.id})
 
+    @commands.group(name="git")
+    async def git(self, ctx):
+        pass
+
+    @git.command()
+    async def pull(self, ctx):
+        origin = self.bot.repo.remotes.origin
+        origin.pull()
+        await ctx.message.add_reaction('\u2705')
+
+    # @git.command()
+    # async def push(self, ctx):
+    #     origin = self.bot.repo.remotes.origin
+    #     origin.push()
+    #     await ctx.message.add_reaction('\u2705')
+
     @commands.command()
     @commands.is_owner()
     async def stat(self, ctx, *, member: discord.Member = None):
