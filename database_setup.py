@@ -10,7 +10,6 @@ from bot import initial_extensions, creds
 
 @click.group(invoke_without_command=True, options_metavar='[options]')
 def main():
-    click.echo('Please invoke a subcommand: `db [init/migrate]`')
     pass
 
 
@@ -24,7 +23,7 @@ def db():
 @click.option('-q', '--quiet', help='less verbose output', is_flag=True)
 def init(cogs, quiet):
     """This manages the migrations and database creation system for you."""
-
+    print('ok')
     run = asyncio.get_event_loop().run_until_complete
     try:
         run(Table.create_pool(creds['postgresql']))
@@ -93,3 +92,6 @@ def migrate(ctx, cog, quiet):
 
     click.echo(f'Done migrating {cog}.')
 
+
+if __name__ == '__main__':
+    main()
