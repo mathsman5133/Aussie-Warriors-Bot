@@ -1,7 +1,9 @@
 def getIds(coc, connection)
-    '''Takes in the client and connection as arguement, returns tuple of 2 lists (remove,add)'''
+    '''Takes in the client and connection as arguement, returns 1 tuple of 2 lists (remove,add)'''
+
 
     try:
+
         # Create a cursor & define tag
         cursor = connection.cursor()
         clanTag = '#P0LYJC8C'
@@ -36,10 +38,22 @@ def getIds(coc, connection)
         idsToRemove = [x[0] for x in cursor.fetchall()]
 
         # To add
-        sql = f'select ID from tag_to_id where Tag in {remove}'
+        sql = f'select ID from tag_to_id where Tag in {add}'
         cursor.execute(sql)
         idsToAdd = [x[0] for x in cursor.fetchall()]
 
+        # Update the table 'last_war' to hold new data
+
+        # first delete the current values in table
+        cursor.execute('TRUNCATE last_war')
+
+        # Now insert the values
+        for tag in currentTags:
+            sql = f'''INSERT INTO last_war(Tag) VALUES('{tag}')'''
+            cursor.execute(sql)
+
+        cursor.close()
+        connection.commit()
     # In case anything breaks
     except Exception as error:
         print(error)
