@@ -4,3 +4,4 @@ click
 pandas>=0.23.4
 xlrd==1.2.0
 requests
+gitpython
