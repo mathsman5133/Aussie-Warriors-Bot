@@ -16,8 +16,9 @@ from cogs.utils.cocapi import ClashOfClans
 from cogs.utils.db import Table
 from cogs.utils import context
 
-json_location = os.path.join(os.getcwd(), 'creds.json')
+# json_location = os.path.join(os.getcwd(), 'creds.json')
 
+BOT_TOKEN = ''
 
 initial_extensions = [
                       'cogs.claim',
@@ -25,28 +26,28 @@ initial_extensions = [
                       'cogs.donations',
                       ]
 
-with open(json_location) as creds:
-    creds = json.load(creds)
+# with open(json_location) as creds:
+#     creds = json.load(creds)
 
 
 def run_bot():
-    loop = asyncio.get_event_loop()
-
-    try:
-        pool = loop.run_until_complete(Table.create_pool(creds['postgresql'], command_timeout=60))
-    except Exception as e:
-        click.echo('Could not set up PostgreSQL. Exiting.', file=sys.stderr)
-        return
+    # loop = asyncio.get_event_loop()
+    #
+    # try:
+    #     pool = loop.run_until_complete(Table.create_pool(creds['postgresql'], command_timeout=60))
+    # except Exception as e:
+    #     click.echo('Could not set up PostgreSQL. Exiting.', file=sys.stderr)
+    #     return
 
     bot = AWBot()
-    bot.pool = pool  # add db as attribute
+    # bot.pool = pool  # add db as attribute
     bot.run()  # run bot
-    bot.http_session.close()   # close aiohttp session
 
 
 class AWBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix=commands.when_mentioned_or('?'), case_insensitive=True)  # setup bot
+        self.remove_command('help')
 
         for e in initial_extensions:
             try:
@@ -59,8 +60,7 @@ class AWBot(commands.Bot):
                                                    family=socket.AF_INET))
 
         self.loaded = creds
-
-        self.coc_token = self.loaded['coctoken']
+        # self.coc_token = self.loaded['coctoken']
         self.coc = ClashOfClans(connection=self.http_session, bot=self)
 
     async def on_message(self, message):
@@ -82,7 +82,7 @@ class AWBot(commands.Bot):
         e.description = f'```py\n{exc}\n```'  # format legible traceback
         e.timestamp = datetime.datetime.utcnow()
 
-        ctx.send(embed=e)
+        await ctx.send(embed=e)
 
     async def on_command(self, ctx):
         await ctx.message.channel.trigger_typing()
@@ -118,7 +118,8 @@ class AWBot(commands.Bot):
 
     def run(self):
         try:
-            super().run(creds['bottoken'])
+            super().run(BOT_TOKEN)
+            # super().run(creds['bottoken'])
         except Exception as e:
             print(e)
 
