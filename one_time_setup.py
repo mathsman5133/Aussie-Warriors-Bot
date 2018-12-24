@@ -15,6 +15,7 @@ def oneTimeSetup(coc,connection):
         cursor.execute('Create table last_war(Tag VARCHAR(20) PRIMARY KEY)')
 
         #Read the excel file containing data
+        import pandas as pd
         df = pd.read_excel('Sidekick Data.xlsx')
 
         #This bit here is gonna look ugly, usually I'd make a seperate function but it's one time only...
