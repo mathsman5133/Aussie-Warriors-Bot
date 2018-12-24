@@ -4,9 +4,10 @@ def oneTimeSetup(coc,connection):
     
     try:
         
-        #Create a cursor
+        #Create a cursor & define Tag
         cursor = connection.cursor()
-        
+        clanTag = '#P0LYJC8C'
+
         #Create a table to store clash tag and discord ID
         cursor.execute('Create table Tag_to_ID(Tag VARCHAR(20) PRIMARY KEY,ID VARCHAR(60) NOT NULL)')
 
