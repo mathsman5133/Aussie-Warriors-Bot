@@ -26,7 +26,8 @@ initial_extensions = [
                       'cogs.claim',
                       'cogs.update_donations',
                       'cogs.donations',
-                      'cogs.admin'
+                      'cogs.admin',
+                      'cogs.war_admin'
                       ]
 
 with open(json_location) as creds:
