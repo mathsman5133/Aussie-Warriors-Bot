@@ -298,6 +298,10 @@ class Admin:
         origin.pull()
         await ctx.message.add_reaction('\u2705')
 
+    @git.command()
+    async def test(self, ctx):
+        await ctx.message.add_reaction('\u2705')
+
     # @git.command()
     # async def push(self, ctx):
     #     origin = self.bot.repo.remotes.origin
