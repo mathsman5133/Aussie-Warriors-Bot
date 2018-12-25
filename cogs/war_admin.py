@@ -163,7 +163,7 @@ class War:
 
         try:
             await member.give_roles(role,
-                                    reason=f"inWar Role Given (mass): "  # reason for audit log
+                                    reason=f"inWar Role Given: "  # reason for audit log
                                            f"{ctx.author.display_name}#{ctx.author.discriminator} ({ctx.author.id})"
                                     )
         except (discord.Forbidden, discord.HTTPException):  # possible (discord) errors
@@ -196,10 +196,12 @@ class War:
         role = ctx.guild.get_role(self.bot.IN_WAR_ROLE_ID)  # get role object
 
         try:
-            await mention.give_roles(role,
-                                     reason=f"inWar Role Removed: "  # reason for audit log
-                                            f"{ctx.author.display_name}#{ctx.author.discriminator} ({ctx.author.id})"
-                                     )
+            for mention in mentions:
+                await mention.remove_roles(role,
+                                           reason=f"inWar Role Removed: "  # reason for audit log
+                                                  f"{ctx.author.display_name}#{ctx.author.discriminator} "
+                                                  f"({ctx.author.id})"
+                                           )
         except (discord.Forbidden, discord.HTTPException):  # possible (discord) errors
             e = discord.Embed(colour=discord.Colour.red())  # red --> error
             e.description = 'Could not give role. Is their roles higher than mine? Else check bot-log'
