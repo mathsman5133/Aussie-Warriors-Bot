@@ -188,4 +188,4 @@ class Update:
 
 
 def setup(bot):
-    bot.add_cog(UpdateCommands(bot))
+    bot.add_cog(Update(bot))

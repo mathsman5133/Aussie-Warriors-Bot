@@ -110,4 +110,4 @@ class Show_Donations:
 
 
 def setup(bot):
-    bot.add_cog(ShowDonations(bot))
+    bot.add_cog(Show_Donations(bot))

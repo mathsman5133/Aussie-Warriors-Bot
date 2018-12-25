@@ -239,4 +239,4 @@ class Claim:
 
 
 def setup(bot):
-    bot.add_cog(ClaimExemptCommands(bot))
+    bot.add_cog(Claim(bot))
