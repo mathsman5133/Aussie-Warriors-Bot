@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 
 
-class War:
+class War_Admin:
 
     def __init__(self, bot):
         self.bot = bot
@@ -241,4 +241,5 @@ class War:
 
         await ctx.send(embed=e)
 
-
+def setup(bot):
+    bot.add_cog(War_Admin(bot))
