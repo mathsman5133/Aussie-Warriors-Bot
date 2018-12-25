@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-
+from asyncpg import exceptions as pgexceptions
 
 class War_Admin:
 
@@ -11,58 +11,66 @@ class War_Admin:
     async def get_ids(self, ctx):
         '''Takes in the client and connection as arguement, returns 1 tuple of 2 lists (remove,add)'''
 
-        try:
+        # try:
 
-            # Create a cursor & define AW tag
-            clanTag = '#P0LYJC8C'
+        # Create a cursor & define AW tag
+        clanTag = '#P0LYJC8C'
 
-            # Query to get details for current war
-            currentWar = await self.bot.coc.clans(clanTag).currentwar().get(self.bot.coc_token)
+        # Query to get details for current war
+        currentWar = await self.bot.coc.clans(clanTag).currentwar().get(self.bot.coc_token)
 
-            # Get the list of tags
-            currentTags = [x['tag'] for x in currentWar['clan']['members']]
+        # Get the list of tags
+        currentTags = [x['tag'] for x in currentWar['clan']['members']]
 
-            # Get a list of tags from last war
-            sql = 'select * from last_war'
-            dump = await ctx.db.fetch(sql)
-            lastTags = [x[0] for x in dump]
+        # Get a list of tags from last war
+        sql = 'select * from last_war'
+        dump = await ctx.db.fetch(sql)
+        lastTags = [x[0] for x in dump]
 
-            # Little bit memory waste T_T
-            # Create sets from lists (so finding difference is easy)
-            current = set(currentTags)
-            last = set(lastTags)
+        # Little bit memory waste T_T
+        # Create sets from lists (so finding difference is easy)
+        current = set(currentTags)
+        last = set()
 
-            # people who were in last war but are not in current war
-            remove = tuple(last - current)
+        # people who were in last war but are not in current war
+        remove = tuple(last - current)
 
-            # people who are in current war but weren't in last
-            add = tuple(current - last)
+        # people who are in current war but weren't in last
+        add = tuple(current - last)
+        print(remove)
+        print(add)
+        # now that we have tags, we just need to query table tag_to_id to get corresponding Ids
 
-            # now that we have tags, we just need to query table tag_to_id to get corresponding Ids
-
-            # To remove
-            sql = f'select ID from tag_to_id where Tag in {remove}'
-            dump = await ctx.db.fetch(sql)
+        # To remove
+        if remove:
+            sql = f'select ID from tag_to_id where Tag in {remove};'
+            dump = await ctx.db.execute(sql)
             idsToRemove = [x[0] for x in dump]
+        else:
+            idsToRemove = []
+        # To add
 
-            # To add
-            sql = f'select ID from tag_to_id where Tag in {add}'
-            dump = ctx.db.fetch(sql)
+        if add:
+            sql = f'select ID from tag_to_id where Tag in {add};'
+            dump = await ctx.db.fetch(sql)
             idsToAdd = [x[0] for x in dump]
+            print(idsToAdd)
+        else:
+            idsToAdd = []
 
-            # Update the table 'last_war' to hold new data
+        # Update the table 'last_war' to hold new data
 
-            # first delete the current values in table
-            ctx.db.execute('TRUNCATE last_war')
+        # first delete the current values in table
+        await ctx.db.execute('TRUNCATE last_war')
 
-            # Now insert the values
-            for tag in currentTags:
-                sql = f'''INSERT INTO last_war(Tag) VALUES('{tag}')'''
-                ctx.db.execute(sql)
+        # Now insert the values
+        for tag in currentTags:
+            sql = f'''INSERT INTO last_war(Tag) VALUES('{tag}')'''
+            await ctx.db.execute(sql)
 
         # In case anything breaks
-        except Exception as error:
-            raise commands.CommandError(ctx, error)
+        # except Exception as error:
+        #     raise commands.CommandError(ctx.message.content, error)
 
         # If nothing goes wrong return lists
         return idsToRemove, idsToAdd, []
@@ -89,7 +97,12 @@ class War_Admin:
         role = ctx.guild.get_role(self.bot.IN_WAR_ROLE_ID)  # get role object
 
         for user_id in ids_to_remove:
-            member = ctx.guild.get_member(user_id)  # get member object
+            member = ctx.guild.get_member(int(user_id))  # get member object
+
+            if not member:
+                failed_members_to_remove.append(user_id)
+                continue
+
             try:
                 await member.remove_roles(role,
                                           reason=f"inWar Role Removal (mass): "  # reason for audit log
@@ -100,12 +113,17 @@ class War_Admin:
                 failed_members_to_remove.append(member)  # for later we will let them know who failed
 
         for user_id in ids_to_give:
-            member = ctx.guild.get_member(user_id)  # get member object
+            member = ctx.guild.get_member(int(user_id))  # get member object
+            print(member)
+            if not member:
+                failed_members_to_give.append(user_id)
+                continue
+
             try:
-                await member.give_roles(role,
-                                        reason=f"inWar Role Given (mass): "  # reason for audit log
-                                               f"{ctx.author.display_name}#{ctx.author.discriminator} ({ctx.author.id})"
-                                        )
+                await member.add_roles(role,
+                                       reason=f"inWar Role Given (mass): "  # reason for audit log
+                                              f"{ctx.author.display_name}#{ctx.author.discriminator} ({ctx.author.id})"
+                                       )
             except (discord.Forbidden, discord.HTTPException):  # possible (discord) errors
                 failed_members_to_give.append(member)  # for later we will let them know who failed
 
@@ -113,8 +131,22 @@ class War_Admin:
 
             # format the problem people into a string with 1 person per line
             not_in_db = '\n'.join(f'{ign} ({tag})' for (index, (ign, tag)) in enumerate(not_in_db)) or None
-            role_add = '\n'.join(f'{user.mention}' for user in failed_members_to_give) or None
-            role_remove = '\n'.join(f'{user.mention}' for user in failed_members_to_remove) or None
+            role_add = '\n'.join(f'{user.mention}' for user in failed_members_to_give if isinstance(user, discord.Member)) or None
+            role_remove = '\n'.join(f'{user.mention}' for user in failed_members_to_remove if isinstance(user, discord.Member)) or None
+
+            if role_add:
+                role_add = role_add.join(f'UserID {user_id} - NIS' for user_id in
+                                         failed_members_to_give if not isinstance(user_id, discord.Member))
+            else:
+                role_add = '\n'.join(f'UserID {user_id} - NIS' for user_id in
+                                     failed_members_to_give if not isinstance(user_id, discord.Member)) or None
+
+            if role_remove:
+                role_remove = role_remove.join(f'UserID {user_id} - NIS' for user_id in
+                                               failed_members_to_remove if not isinstance(user_id, discord.Member))
+            else:
+                role_remove = '\n'.join(f'UserID {user_id} - NIS' for user_id in
+                                        failed_members_to_remove if not isinstance(user_id, discord.Member)) or None
 
             e = discord.Embed(colour=discord.Colour.red())  # we're going to send an error embed --> red colour
             e.set_author(name="Errors when dealing with the following")
@@ -128,7 +160,7 @@ class War_Admin:
             if role_remove:
                 e.add_field(name="Failed to remove role:", value=role_remove)   # same
 
-            e.set_footer(text="Please check bot mod logs for traceback (if applicable)")  # tell them to check bot log
+            e.set_footer(text="Please check bot logs for traceback (if applicable)")  # tell them to check bot log
 
             return await ctx.send(embed=e)
 
@@ -137,7 +169,7 @@ class War_Admin:
     @war_role.command()
     async def add(self, ctx, tag_ign: str, member: discord.Member=None):
         """
-        Manually add someone kn war to the `inWar` role.
+        Manually add someone in war to the `inWar` role.
 
         The preferred method is `?war role init`
         However, pass in a player tag or IGN, and either a mention, user#discrim or id.
@@ -158,15 +190,18 @@ class War_Admin:
                 raise commands.BadArgument(f'IGN {tag_ign} not found in AW.')
 
         query = f"INSERT INTO last_war VALUES ($1)"
-        await ctx.db.execute(query, tag_ign)
+        try:
+            await ctx.db.execute(query, tag_ign)
+        except pgexceptions.UniqueViolationError:
+            pass
 
         role = ctx.guild.get_role(self.bot.IN_WAR_ROLE_ID)  # get role object
 
         try:
-            await member.give_roles(role,
-                                    reason=f"inWar Role Given: "  # reason for audit log
-                                           f"{ctx.author.display_name}#{ctx.author.discriminator} ({ctx.author.id})"
-                                    )
+            await member.add_roles(role,
+                                   reason=f"inWar Role Given: "  # reason for audit log
+                                          f"{ctx.author.display_name}#{ctx.author.discriminator} ({ctx.author.id})"
+                                   )
         except (discord.Forbidden, discord.HTTPException):  # possible (discord) errors
             e = discord.Embed(colour=discord.Colour.red())  # red --> error
             e.description = 'Could not give role. Is their roles higher than mine? Else check bot-log'
@@ -186,13 +221,20 @@ class War_Admin:
         Please use this over manually removing the role as it removes the entry from the database.
         """
         if not mentions:
-            mentions = ctx.author
+            mentions = [ctx.author]
 
-        query = "SELECT tag FROM tag_and_id WHERE ID in $1"
-        tags = await ctx.db.fetch(query, [n.id for n in mentions])
+        ids = ()
+        ids = ids + tuple(str(n.id) for n in mentions)
+        if len(ids) == 1:
+            ids = ids + ('123456789',)
 
-        query = "DELETE FROM last_war WHERE Tag in $1"
-        await ctx.db.execute(query, [n[0] for n in tags])
+        query = f"SELECT tag FROM tag_to_id WHERE id in {ids};"
+
+        tags = await ctx.db.execute(query)
+        tags = tuple(n[0] for n in tags)
+
+        query = f"DELETE FROM last_war WHERE Tag in {tags};"
+        await ctx.db.execute(query)
 
         role = ctx.guild.get_role(self.bot.IN_WAR_ROLE_ID)  # get role object
 
@@ -218,28 +260,38 @@ class War_Admin:
 
         Requires `manage_roles` permission
         """
-        query = "SELECT id FROM last_war"
-        dump = set(await ctx.db.fetch(query))
+        query = "SELECT tag FROM last_war"
+        tags = await ctx.db.fetch(query)
+
+        tags = tuple(n[0] for n in tags)
+
+        sql = f'select ID from tag_to_id where Tag in {tags};'
+
+        dump = await ctx.db.fetch(sql)
+
+        with_db_role = [n[0] for n in dump]
+        with_discord_role = [n.id for n in ctx.guild.get_role(self.bot.IN_WAR_ROLE_ID).members]
 
         # sort list by user ids (a big int) ascending, so that both are sorted same way,
         # meaning easy to pick inconsistencies between them (shouldnt be to start with)
-
-        with_db_role = [n[0] for n in dump].sort()
-        with_discord_role = [n.id for n in ctx.guild.get_role(self.bot.IN_WAR_ROLE_ID).members].sort()
+        with_db_role.sort()
+        with_discord_role.sort()
 
         e = discord.Embed(colour=discord.Colour.blue())  # blue --> nothing changed
-
-        e.add_field(name="Members with inWar role (per db)",
-                    value='\n'.join(f'<@{userid}>' for userid in with_db_role) or 'No Members')
+        e.set_author(name="Members with inWar role ")
+        e.add_field(name="Per DB",
+                    value='\n'.join(f'<@{userid}>' for userid in with_db_role) or 'No Members'
+                    )
 
         # the reason I used <@id> over user.mention is that it is nice to have roles sorted by something so it is easy
         # to pick people who shouldn't be on one but are on the other etc. (even tho this should not be the case
 
-        e.add_field(name="Members with inWar role (per discord roles)",
+        e.add_field(name="Per discord roles",
                     value='\n'.join(f'<@{userid}>' for userid in with_discord_role) or 'No Members',
                     inline=True)
 
         await ctx.send(embed=e)
+
 
 def setup(bot):
     bot.add_cog(War_Admin(bot))
