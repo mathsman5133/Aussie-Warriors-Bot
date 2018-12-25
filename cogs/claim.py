@@ -17,7 +17,7 @@ class Claims(db.Table):
     exempt = db.Column(db.Boolean())
 
 
-class ClaimExemptCommands:
+class Claim:
     def __init__(self, bot):
         self.bot = bot
 

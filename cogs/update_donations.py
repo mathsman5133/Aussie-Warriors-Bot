@@ -19,7 +19,7 @@ class Averages(db.Table):
     warning = db.Column(db.Boolean())
 
 
-class UpdateCommands:
+class Update:
     def __init__(self, bot):
         self.bot = bot
 

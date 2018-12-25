@@ -3,7 +3,7 @@ from discord.ext import commands
 import cogs.utils.paginator as paginator
 
 
-class ShowDonations:
+class Show_Donations:
     def __init__(self, bot):
         self.bot = bot
 
