@@ -30,15 +30,14 @@ class War_Admin:
         # Little bit memory waste T_T
         # Create sets from lists (so finding difference is easy)
         current = set(currentTags)
-        last = set()
+        last = set(lastTags)
 
         # people who were in last war but are not in current war
         remove = tuple(last - current)
 
         # people who are in current war but weren't in last
         add = tuple(current - last)
-        print(remove)
-        print(add)
+
         # now that we have tags, we just need to query table tag_to_id to get corresponding Ids
 
         # To remove
@@ -54,7 +53,7 @@ class War_Admin:
             sql = f'select ID from tag_to_id where Tag in {add};'
             dump = await ctx.db.fetch(sql)
             idsToAdd = [x[0] for x in dump]
-            print(idsToAdd)
+
         else:
             idsToAdd = []
 
@@ -68,8 +67,8 @@ class War_Admin:
             sql = f'''INSERT INTO last_war(Tag) VALUES('{tag}')'''
             await ctx.db.execute(sql)
 
-        #Lastly, we find list of tags which are not present in our database, i.e unclaimed
-        sql ='select Tag from tag_to_id'
+        # Lastly, we find list of tags which are not present in our database, i.e unclaimed
+        sql = 'select Tag from tag_to_id'
         dump = await ctx.db.fetch(sql)
         tagsInDb = [x[0] for x in dump]
 
@@ -100,6 +99,10 @@ class War_Admin:
 
         ids_to_remove, ids_to_give, not_in_db = await self.get_ids(ctx)
 
+        not_in_db_tags = not_in_db
+        query = 'SELECT ign FROM claims WHERE tag=$1'  # we have IGN saved in claims table, get from there
+        not_in_db_ign = [(await ctx.db.fetchrow(query, n))[0] for n in not_in_db_tags]
+
         failed_members_to_give = []
         failed_members_to_remove = []
 
@@ -123,7 +126,7 @@ class War_Admin:
 
         for user_id in ids_to_give:
             member = ctx.guild.get_member(int(user_id))  # get member object
-            print(member)
+
             if not member:
                 failed_members_to_give.append(user_id)
                 continue
@@ -139,9 +142,12 @@ class War_Admin:
         if failed_members_to_remove or failed_members_to_give or not_in_db:
 
             # format the problem people into a string with 1 person per line
-            not_in_db = '\n'.join(f'{ign} ({tag})' for (index, (ign, tag)) in enumerate(not_in_db)) or None
-            role_add = '\n'.join(f'{user.mention}' for user in failed_members_to_give if isinstance(user, discord.Member)) or None
-            role_remove = '\n'.join(f'{user.mention}' for user in failed_members_to_remove if isinstance(user, discord.Member)) or None
+            not_in_db = '\n'.join(f'{not_in_db_ign[index]} ({not_in_db_tags[index]})'
+                                  for index in range(len(not_in_db))) or None
+            role_add = '\n'.join(f'{user.mention}' for user in
+                                 failed_members_to_give if isinstance(user, discord.Member)) or None
+            role_remove = '\n'.join(f'{user.mention}' for user in
+                                    failed_members_to_remove if isinstance(user, discord.Member)) or None
 
             if role_add:
                 role_add = role_add.join(f'UserID {user_id} - NIS' for user_id in
