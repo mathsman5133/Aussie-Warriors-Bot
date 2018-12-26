@@ -73,8 +73,13 @@ class War_Admin:
         tagsInDb = [x[0] for x in dump]
 
         tagsInDb = set(tagsInDb)
-        unclaimed = list(current - tagsInDb)
+        unclaimedTags = list(current - tagsInDb)
 
+        #Get ign of people with unclaimed tags
+        ign = [x['name'] for x in currentWar['clan']['members'] for tag in unclaimedTags if x['tag'] == tag]
+
+        #Create a list of tuples, each of which conatins (ign,tag) for every entry
+        unclaimed = [(ign,tag) for ign,tag in zip(ign,unclaimedTags)]
 
         # In case anything breaks
         # except Exception as error:
