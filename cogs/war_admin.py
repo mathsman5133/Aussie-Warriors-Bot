@@ -6,7 +6,7 @@ class War_Admin:
 
     def __init__(self, bot):
         self.bot = bot
-        self.bot.IN_WAR_ROLE_ID = 508537319150845992
+        self.bot.IN_WAR_ROLE_ID = 526702907127627793
 
     async def get_ids(self, ctx):
         '''Takes in the client and connection as arguement, returns 1 tuple of 2 lists (remove,add)'''
