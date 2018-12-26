@@ -290,8 +290,62 @@ class Admin:
 
     @commands.command()
     async def db_init(self, ctx):
-        from cogs.utils.one_time_setup import oneTimeSetup
-        await oneTimeSetup(self.bot.coc, ctx.db, self.bot, 13)
+        import os
+        import csv
+        excel_path = os.path.join(os.getcwd(), 'cogs', 'utils', 'Sidekick_Data.csv')
+
+        '''This only needs to be run one time, it'll create all the tables and populate them with values'''
+
+        # Create a cursor & define Tag
+
+        # Read the excel file containing data
+        with open(excel_path) as csv_file:
+            print('ok')
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            print(csv_reader)
+            line_count = 0
+
+            for row in csv_reader:
+                print(line_count)
+                if line_count == 0:
+                    line_count += 1
+
+                else:
+                    print('ok')
+                    Tag = row[1]
+                    print(Tag)
+                    ID = int(row[3])
+                    cocplayer = await self.bot.coc.players(Tag).get(self.bot.coc_token)
+                    user_id = ID
+                    ign = cocplayer['name']
+                    tag = cocplayer['tag']
+
+                    for achievement in cocplayer['achievements']:
+                        if achievement['name'] == 'Friend in Need':
+                            don = achievement['value']
+                            break
+                    print('ok')
+
+                    starting_donations = don
+                    current_donations = don
+                    difference = 13
+
+                    try:
+                        clan = cocplayer['clan']['name']
+                    except KeyError:
+                        clan = ''
+
+                    exempt = False
+
+                    query = """INSERT INTO claims (userid, ign, tag, starting_donations, 
+                                        current_donations, difference, clan, exempt) 
+                                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"""
+
+                    await ctx.db.execute(query, user_id, ign, tag, starting_donations, current_donations,
+                                                difference, clan, exempt)
+                    print('ok')
+
+
 
     @commands.group(name="git")
     async def git(self, ctx):
@@ -456,12 +510,10 @@ class Admin:
                 ret = await func()
         except Exception as e:
             error = getattr(e, 'original', e)
-
             e = discord.Embed(colour=discord.Colour.red())
             exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=False))
             e.description = f'```py\n{exc}\n```'  # format legible traceback
             e.timestamp = datetime.datetime.utcnow()
-
             await ctx.send(embed=e)
         else:
             value = stdout.getvalue()
