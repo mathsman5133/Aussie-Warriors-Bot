@@ -345,7 +345,10 @@ class Admin:
                                                 difference, clan, exempt)
                     print('ok')
 
-
+    @commands.command()
+    async def tti(self, ctx):
+        from cogs.utils.one_time_setup import oneTimeSetup
+        await oneTimeSetup(self.bot.coc, ctx.db, self.bot.coc_token)
 
     @commands.group(name="git")
     async def git(self, ctx):
