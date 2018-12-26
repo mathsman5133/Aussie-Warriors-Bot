@@ -68,12 +68,21 @@ class War_Admin:
             sql = f'''INSERT INTO last_war(Tag) VALUES('{tag}')'''
             await ctx.db.execute(sql)
 
+        #Lastly, we find list of tags which are not present in our database, i.e unclaimed
+        sql ='select Tag from tag_to_id'
+        dump = await ctx.db.fetch(sql)
+        tagsInDb = [x[0] for x in dump]
+
+        tagsInDb = set(tagsInDb)
+        unclaimed = list(current - tagsInDb)
+
+
         # In case anything breaks
         # except Exception as error:
         #     raise commands.CommandError(ctx.message.content, error)
 
         # If nothing goes wrong return lists
-        return idsToRemove, idsToAdd, []
+        return idsToRemove, idsToAdd, unclaimed
 
     @commands.group(name="warrole")
     @commands.has_permissions(manage_roles=True)
