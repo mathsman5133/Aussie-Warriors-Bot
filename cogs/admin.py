@@ -378,8 +378,8 @@ class Admin:
                         line_count += 1
                         pass
                     else:
-                        Tag = row['Clash Tag']
-                        ID = row['Discord ID']
+                        Tag = row[1]
+                        ID = row[3]
                         sql = f'''INSERT INTO Tag_to_ID(Tag,ID) VALUES('{Tag}','{ID}')'''
                         await cursor.execute(sql)
 
