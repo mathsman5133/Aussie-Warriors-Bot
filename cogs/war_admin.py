@@ -76,10 +76,7 @@ class War_Admin:
         unclaimedTags = list(current - tagsInDb)
 
         #Get ign of people with unclaimed tags
-        ign = [x['name'] for x in currentWar['clan']['members'] for tag in unclaimedTags if x['tag'] == tag]
-
-        #Create a list of tuples, each of which conatins (ign,tag) for every entry
-        unclaimed = [(ign,tag) for ign,tag in zip(ign,unclaimedTags)]
+        unclaimed = [(x['name'],tag) for x in currentWar['clan']['members'] for tag in unclaimedTags if x['tag'] == tag]
 
         # In case anything breaks
         # except Exception as error:
@@ -103,6 +100,10 @@ class War_Admin:
         """
 
         ids_to_remove, ids_to_give, not_in_db = await self.get_ids(ctx)
+
+        not_in_db_tags = not_in_db
+        query = 'SELECT ign FROM claims WHERE tag=$1'  # we have IGN saved in claims table, get from there
+        not_in_db_ign = [(await ctx.db.fetchrow(query, n))[0] for n in not_in_db_tags]
 
         failed_members_to_give = []
         failed_members_to_remove = []
@@ -143,8 +144,8 @@ class War_Admin:
         if failed_members_to_remove or failed_members_to_give or not_in_db:
 
             # format the problem people into a string with 1 person per line
-            not_in_db = '\n'.join(f'{ign} ({tag})'
-                                  for (index, (ign, tag)) in enumerate(not_in_db)) or None
+            not_in_db = '\n'.join(f'{not_in_db_ign[index]} ({not_in_db_tags[index]})'
+                                  for index in range(len(not_in_db))) or None
             role_add = '\n'.join(f'{user.mention}' for user in
                                  failed_members_to_give if isinstance(user, discord.Member)) or None
             role_remove = '\n'.join(f'{user.mention}' for user in
