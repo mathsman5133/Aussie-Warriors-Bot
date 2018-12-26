@@ -86,7 +86,7 @@ class War_Admin:
         return idsToRemove, idsToAdd, unclaimed
 
     @commands.group(name="warrole")
-    @commands.has_permissions(manage_roles=True)
+    # @commands.has_permissions(manage_roles=True)
     async def war_role(self, ctx):
         """[Group] Manage the inWar role when a (league) war is in progress"""
         pass  # to prevent from throwing error
