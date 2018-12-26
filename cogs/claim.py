@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from cogs.utils import db
 from cogs.utils import paginator
-
+from asyncpg import exceptions as pgexceptions
 
 class Claims(db.Table):
     id = db.PrimaryKeyColumn()
@@ -33,7 +33,6 @@ class Claim:
 
     @commands.command()
     async def claim(self, ctx, player_tag, mention: discord.Member = None):
-
         if not mention:
             mention = ctx.author
 
@@ -43,7 +42,7 @@ class Claim:
             query = """SELECT * FROM claims WHERE ign = $1 AND userid = $2"""
 
         dump = await ctx.db.fetchrow(query, player_tag, mention.id)
-        print(dump)
+
         if dump:
             ign = dump['ign']
             tag = dump['tag']
@@ -95,12 +94,18 @@ class Claim:
         exempt = False
 
         query = """
-                INSERT INTO claims (userid, ign, tag, starting_donations, 
-                current_donations, difference, clan, exempt) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                WITH donation_insert AS (
+                    INSERT INTO claims (userid, ign, tag, starting_donations, 
+                    current_donations, difference, clan, exempt) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                )
+                INSERT INTO tag_to_id (tag, id) VALUES ($3, $1);
                 """
-        await ctx.db.execute(query, user_id, ign, tag, starting_donations,
-                             current_donations, difference, clan, exempt)
+        try:
+            await ctx.db.execute(query, user_id, ign, tag, starting_donations,
+                                 current_donations, difference, clan, exempt)
+        except pgexceptions.UniqueViolationError:
+            raise commands.BadArgument('Seems tag is already in `tag_to_id` DB, but not claims DB. Sorry')
 
         await ctx.send(f'{mention.display_name}#{mention.discriminator}, you have claimed {ign} ({tag})')
 
@@ -115,13 +120,20 @@ class Claim:
             query = 'DELETE FROM claims WHERE tag = $1'
             await ctx.db.execute(query, tag_or_ign)
 
+            query = 'DELETE FROM tag_to_id WHERE tag = $1'
+            await ctx.db.execute(query, tag_or_ign)
+
         else:
             query = 'SELECT * FROM claims WHERE ign = $1'
-            dump = await ctx.db.fetch(query, tag_or_ign)
+            dump = await ctx.db.fetchrow(query, tag_or_ign)
             if not dump:
                 raise commands.BadArgument(f"IGN {tag_or_ign} has not been claimed!")
+
             query = 'DELETE FROM claims WHERE ign = $1'
             await ctx.db.execute(query, tag_or_ign)
+
+            query = 'DELETE FROM tag_to_id WHERE tag = $1'
+            await ctx.db.execute(query, dump[2][0])
 
         await ctx.message.add_reaction('\u2705')
 
