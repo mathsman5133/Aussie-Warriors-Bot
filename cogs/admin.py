@@ -288,6 +288,11 @@ class Admin:
             for member in self.bot.get_guild(352298238180851712).get_role(390068631708499971).members:
                 writer.writerow({'Name': member.name, 'ID': member.id})
 
+    @commands.command()
+    async def db_init(self, ctx):
+        from cogs.utils.one_time_setup import oneTimeSetup
+        await oneTimeSetup(self.bot.coc, ctx.db, self.bot, 13)
+
     @commands.group(name="git")
     async def git(self, ctx):
         pass
