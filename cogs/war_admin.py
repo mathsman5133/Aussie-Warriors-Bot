@@ -57,17 +57,8 @@ class War_Admin:
         else:
             idsToAdd = []
 
-        # Update the table 'last_war' to hold new data
 
-        # first delete the current values in table
-        await ctx.db.execute('TRUNCATE last_war')
-
-        # Now insert the values
-        for tag in currentTags:
-            sql = f'''INSERT INTO last_war(Tag) VALUES('{tag}')'''
-            await ctx.db.execute(sql)
-
-        # Lastly, we find list of tags which are not present in our database, i.e unclaimed
+        #We find list of tags which are not present in our database, i.e unclaimed
         sql = 'select Tag from tag_to_id'
         dump = await ctx.db.fetch(sql)
         tagsInDb = [x[0] for x in dump]
@@ -77,6 +68,19 @@ class War_Admin:
 
         #Get ign of people with unclaimed tags
         unclaimed = [(x['name'],tag) for x in currentWar['clan']['members'] for tag in unclaimedTags if x['tag'] == tag]
+
+        #If there are any unclaimed accounts (We don't want to truncate the last war data)
+        if unclaimed:
+            pass
+        else:
+            # Update the table 'last_war' to hold new data
+            # first delete the current values in table
+            await ctx.db.execute('TRUNCATE last_war')
+
+            # Now insert the values
+            for tag in currentTags:
+                sql = f'''INSERT INTO last_war(Tag) VALUES('{tag}')'''
+                await ctx.db.execute(sql)
 
         # In case anything breaks
         # except Exception as error:
