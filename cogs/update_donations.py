@@ -27,7 +27,7 @@ class Update:
         if isinstance(error, commands.BadArgument):
             e = discord.Embed(colour=discord.Colour.red())
             e.description = error
-            await ctx.send(e)
+            await ctx.send(embed=e)
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(f'Missing required argument {error}!')
             await ctx.show_help()
