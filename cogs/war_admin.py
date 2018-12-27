@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from asyncpg import exceptions as pgexceptions
+from cogs.utils import checks
 
 class War_Admin:
 
@@ -90,7 +91,8 @@ class War_Admin:
         return idsToRemove, idsToAdd, unclaimed
 
     @commands.group(name="warrole")
-    # @commands.has_permissions(manage_roles=True)
+    @checks.mod_commands()
+    @checks.manage_roles()
     async def war_role(self, ctx):
         """[Group] Manage the inWar role when a (league) war is in progress"""
         pass  # to prevent from throwing error
