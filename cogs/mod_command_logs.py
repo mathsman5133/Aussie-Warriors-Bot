@@ -17,8 +17,9 @@ class Command_Logging:
             return
 
         time_taken = datetime.datetime.utcnow() - ctx.start_time
-        time_taken_readable = (f'{time_taken.microseconds/1000000} sec'
-                               if time_taken.microseconds > 500000 else f'{time_taken.microseconds/1000}ms')
+        # time_taken_readable = (f'{time_taken.microseconds/1000000} sec'
+        #                        if time_taken.microseconds > 500000 else f'{time_taken.microseconds/1000}ms')
+        time_taken_readable = f'{time_taken.microseconds/1000000} sec'
 
         e = discord.Embed(colour=discord.Colour.green())
 
@@ -46,8 +47,9 @@ class Command_Logging:
             return
 
         time_taken = datetime.datetime.utcnow() - ctx.start_time
-        time_taken_readable = (f'{time_taken.microseconds/1000000} sec'
-                               if time_taken.microseconds > 500000 else f'{time_taken.microseconds/1000}ms')
+        # time_taken_readable = (f'{time_taken.microseconds/1000000} sec'
+        #                        if time_taken.microseconds > 500000 else f'{time_taken.microseconds/1000}ms')
+        time_taken_readable = f'{time_taken.microseconds/1000000} sec'
 
         e = discord.Embed(colour=discord.Colour.red())
 
