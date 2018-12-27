@@ -1,7 +1,7 @@
 from discord.ext import commands
 import datetime
 from cogs.utils import db
-
+import discord
 
 class Season(db.Table):
     id = db.PrimaryKeyColumn()
@@ -22,6 +22,15 @@ class Averages(db.Table):
 class Update:
     def __init__(self, bot):
         self.bot = bot
+
+    async def __error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            e = discord.Embed(colour=discord.Colour.red())
+            e.description = error
+            await ctx.send(e)
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(f'Missing required argument {error}!')
+            await ctx.show_help()
 
     async def donations_by_today(self):
         query = "SELECT donationsbytoday FROM season WHERE toggle = $1"

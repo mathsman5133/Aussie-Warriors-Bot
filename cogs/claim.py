@@ -23,7 +23,12 @@ class Claim:
 
     async def __error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
-            await ctx.send(error)
+            e = discord.Embed(colour=discord.Colour.red())
+            e.description = error
+            await ctx.send(e)
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(f'Missing required argument {error}!')
+            await ctx.show_help()
 
     async def donations_by_today(self):
         query = "SELECT donationsbytoday FROM season WHERE toggle = $1"

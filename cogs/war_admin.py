@@ -9,6 +9,15 @@ class War_Admin:
         self.bot = bot
         self.bot.IN_WAR_ROLE_ID = 526702907127627793
 
+    async def __error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            e = discord.Embed(colour=discord.Colour.red())
+            e.description = error
+            await ctx.send(e)
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(f'Missing required argument {error}!')
+            await ctx.show_help()
+
     async def get_ids(self, ctx):
         '''Takes in the client and connection as arguement, returns 1 tuple of 2 lists (remove,add)'''
 
