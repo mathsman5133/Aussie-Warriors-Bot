@@ -112,7 +112,7 @@ class Claim:
         except pgexceptions.UniqueViolationError:
             raise commands.BadArgument('Seems tag is already in `tag_to_id` DB, but not claims DB. Sorry')
 
-        await ctx.send(f'{mention.display_name}#{mention.discriminator}, you have claimed {ign} ({tag})')
+        await ctx.send(f'{mention.display_name}, you have claimed {ign} ({tag})')
 
     @commands.command(aliases=['del'])
     async def delete_claim(self, ctx, *, tag_or_ign):
