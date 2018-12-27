@@ -27,7 +27,8 @@ initial_extensions = [
                       'cogs.update_donations',
                       'cogs.donations',
                       'cogs.admin',
-                      'cogs.war_admin'
+                      'cogs.war_admin',
+                      'cogs.mod_command_logs'
                       ]
 
 with open(json_location) as creds:
@@ -68,28 +69,27 @@ class AWBot(commands.Bot):
         self.coc = ClashOfClans(connection=self.http_session, bot=self)
 
         self.repo = git.Repo(REPO_PATH)
-        print(self.repo)
 
     async def on_message(self, message):
         if message.author.bot:
             return  # ignore bot messages
         await self.process_commands(message)
 
-    async def on_command_error(self, ctx, error):
-        # we dont want logs for this stuff which isnt our problem
-        ignored = (commands.NoPrivateMessage, commands.DisabledCommand, commands.CheckFailure,
-                   commands.CommandNotFound, commands.UserInputError, discord.Forbidden)
-        error = getattr(error, 'original', error)
-
-        if isinstance(error, ignored):
-            return
-
-        e = discord.Embed(colour=discord.Colour.red())
-        exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=False))
-        e.description = f'```py\n{exc}\n```'  # format legible traceback
-        e.timestamp = datetime.datetime.utcnow()
-
-        await ctx.send(embed=e)
+    # async def on_command_error(self, ctx, error):
+    #     # we dont want logs for this stuff which isnt our problem
+    #     ignored = (commands.NoPrivateMessage, commands.DisabledCommand, commands.CheckFailure,
+    #                commands.CommandNotFound, commands.UserInputError, discord.Forbidden)
+    #     error = getattr(error, 'original', error)
+    #
+    #     if isinstance(error, ignored):
+    #         return
+    #
+    #     e = discord.Embed(colour=discord.Colour.red())
+    #     exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=False))
+    #     e.description = f'```py\n{exc}\n```'  # format legible traceback
+    #     e.timestamp = datetime.datetime.utcnow()
+    #
+    #     await ctx.send(embed=e)
 
     async def on_command(self, ctx):
         await ctx.message.channel.trigger_typing()
