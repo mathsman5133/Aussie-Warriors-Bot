@@ -16,8 +16,9 @@ class Command_Logging:
         if ctx not in self.bot.mod_commands:
             return
 
-        time_taken = ctx.start_time - datetime.datetime.utcnow()
-        time_taken_readable = time_taken.strftime('%Mmin %Ssec %fms')
+        time_taken = datetime.datetime.utcnow() - ctx.start_time
+        time_taken_readable = (f'{time_taken.microseconds/1000000} sec'
+                               if time_taken.microseconds > 500000 else f'{time_taken.microseconds/1000}ms')
 
         e = discord.Embed(colour=discord.Colour.green())
 
@@ -47,7 +48,6 @@ class Command_Logging:
         time_taken = datetime.datetime.utcnow() - ctx.start_time
         time_taken_readable = (f'{time_taken.microseconds/1000000} sec'
                                if time_taken.microseconds > 500000 else f'{time_taken.microseconds/1000}ms')
-        print(time_taken.days, time_taken.seconds, time_taken.microseconds)
 
         e = discord.Embed(colour=discord.Colour.red())
 
