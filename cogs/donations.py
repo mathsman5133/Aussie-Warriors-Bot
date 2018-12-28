@@ -48,13 +48,19 @@ class Show_Donations:
 
     @commands.command()
     async def awdon(self, ctx):
-        query = "SELECT ign, tag, userid, difference FROM claims WHERE clan = $1"
+        query = "SELECT userid, ign, tag, difference FROM claims WHERE clan = $1 ORDER BY userid ASC;"
         dump = await ctx.db.fetch(query, 'Aussie Warriors')
-        players = []
-        players.extend(f'{ign} ({tag}): <@{userid}> - `{don} donations`'
-                       for (index, (ign, tag, userid, don)) in enumerate(dump)) or 'No Members'
 
-        pages = paginator.EmbedPag(ctx, entries=players, per_page=20, message=ctx.message)
+        unique_ids = set([n[0] for n in dump])  # unique list of discord id's so can group acc's by discord user
+
+        members = []  # list of each discord user after we have made our string
+        for user in unique_ids:
+            #  make string of accounts in format ign (tag): donation\n ...more accounts
+            string = '\n'.join(f'{n[1]} ({n[2]}): `{n[3]} don`' for n in dump if n[0] == user)
+            new_string = f'<@{user}>\n{string}'  # add the mention at top of string
+            members.append(new_string)  # add to our list of strings
+
+        pages = paginator.EmbedPag(ctx, entries=members, per_page=10, message=ctx.message)  # paginate it
         await pages.paginate(start_page=1)
 
         # e = discord.Embed(colour=discord.Colour.green())
@@ -67,11 +73,16 @@ class Show_Donations:
         query = "SELECT ign, tag, userid, difference FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussies 4 War')
 
-        players = []
-        players.extend(f'{ign} ({tag}): <@{userid}> - `{don} donations`'
-                       for (index, (ign, tag, userid, don)) in enumerate(dump)) or 'No Members'
+        unique_ids = set([n[0] for n in dump])  # unique list of discord id's so can group acc's by discord user
 
-        pages = paginator.EmbedPag(ctx, entries=players, per_page=20, message=ctx.message)
+        members = []  # list of each discord user after we have made our string
+        for user in unique_ids:
+            #  make string of accounts in format ign (tag): donation\n ...more accounts
+            string = '\n'.join(f'{n[1]} ({n[2]}): `{n[3]} don`' for n in dump if n[0] == user)
+            new_string = f'<@{user}>\n{string}'  # add the mention at top of string
+            members.append(new_string)  # add to our list of strings
+
+        pages = paginator.EmbedPag(ctx, entries=members, per_page=10, message=ctx.message)
         await pages.paginate(start_page=1)
 
         # e = discord.Embed(colour=discord.Colour.green())
