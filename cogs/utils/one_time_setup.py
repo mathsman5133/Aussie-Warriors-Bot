@@ -60,9 +60,7 @@ async def oneTimeSetup(coc,connection, coc_token):
                          'tag varchar (20)NOT NULL '+
                          'th VARCHAR (3) NOT NULL '+
                          'hitrate varchar(10) NOT NULL '+
-                         'hitrate_per varchar(8) NOT NULL '+
-                         'defenserate varchar (10) NOT NULL '+
-                         'defenserate_per varchar (8) NOT NULL)')
+                         'defenserate varchar (10) NOT NULL)')
     cursor.close()
     connection.commit()
 

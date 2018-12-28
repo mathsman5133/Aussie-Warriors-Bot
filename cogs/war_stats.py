@@ -84,14 +84,12 @@ def calculateWarStats(coc, connection):
         playerTag = member['tag']
         playerTownhall = str(playerTownhall)
 
-        # calculate hitrate, hitrate %, defenserate and defenserate % respectively
+        # calculate hitrate and defenserate respectively
         hr = str(sum(successfulHits)) + '/' + str(len(successfulHits))
-        hr_per = str(round(sum(successfulHits)*100/len(successfulHits), 2))+'%' if len(successfulHits) != 0 else '0%'
         dr = str(defendedAttacks) + '/' + str(totalAttacksOnBase)
-        dr_per = str(round(defendedAttacks*100/totalAttacksOnBase, 2))+'%' if totalAttacksOnBase != 0 else '0%'
 
         # Save all info into a tuple (Easier to insert into db)
-        row = (warNo, playerName, playerTag, playerTownhall, hr, hr_per, dr, dr_per)
+        row = (warNo, playerName, playerTag, playerTownhall, hr, dr)
 
         # Append row to rows list
         rows.append(row)
@@ -108,7 +106,7 @@ def calculateWarStats(coc, connection):
 
     # Now we just insert all values from rows one by one
     for row in rows:
-        sql = f'''INSERT INTO war_stats(war_no,name,tag,th,hitrate,hitrate_per,defenserate,defenserate_per) VALUES {row};'''
+        sql = f'''INSERT INTO war_stats(war_no,name,tag,th,hitrate,defenserate) VALUES {row};'''
         await ctx.db.execute(sql)
 
     # Finally close cursor and commit changes
