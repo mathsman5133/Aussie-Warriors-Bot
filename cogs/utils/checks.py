@@ -24,6 +24,19 @@ def manage_roles():
     return commands.check(pred)
 
 
+def manage_server():
+    async def pred(ctx):
+        if is_owner():
+            return True
+
+        if not ctx.guild:
+            return False
+
+        return ctx.author.guild_permissions.manage_server
+
+    return commands.check(pred)
+
+
 def mod_commands():
     def pred(ctx):
         ctx.bot.mod_commands.append(ctx)
