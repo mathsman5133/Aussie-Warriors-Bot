@@ -155,21 +155,21 @@ class Update:
         await self.refresh_avg()
 
     @commands.command()
-    @checks.manage_server()
+    # @checks.manage_server()
     @checks.mod_commands()
     async def update_required(self, ctx):
         await self.update_donations_by_today()
         await ctx.message.add_reaction('\u2705')
 
     @commands.command(name='refavg')
-    @checks.manage_server()
+    # @checks.manage_server()
     @checks.mod_commands()
     async def _refresh_avg(self, ctx):
         await self.refresh_avg()
         await ctx.message.add_reaction('\u2705')
 
     @commands.command(name='upd')
-    @checks.manage_server()
+    # @checks.manage_server()
     @checks.mod_commands()
     async def _update(self, ctx):
         await self.update()
@@ -187,7 +187,7 @@ class Update:
         )
 
     @commands.command(name='manreset')
-    @checks.manage_server()
+    # @checks.manage_server()
     @checks.mod_commands()
     async def manual_reset(self, ctx):
         query = "UPDATE season SET toggle = $1"

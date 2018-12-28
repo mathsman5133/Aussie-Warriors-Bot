@@ -118,7 +118,7 @@ class Show_Donations:
         self.bot.donation_ping_webhook.send(embed=eh)
 
     @commands.command()
-    @checks.manage_server()
+    # @checks.manage_server()
     @checks.mod_commands()
     async def send_pings(self, ctx):
         await self.send_donation_pings()
