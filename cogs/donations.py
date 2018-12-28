@@ -3,6 +3,7 @@ from discord.ext import commands
 import cogs.utils.paginator as paginator
 from cogs.utils import checks
 
+
 class Show_Donations:
     def __init__(self, bot):
         self.bot = bot
@@ -30,39 +31,48 @@ class Show_Donations:
         query = 'SELECT ign, tag, difference FROM claims WHERE userid = $1'
         dump = await ctx.db.fetch(query, mention.id)
 
-        players = '\n'.join(f'{ign} ({tag}): `{donations} donations` '
+        players = [].extend(f'{ign} ({tag}): `{donations} donations` '
                             for (index, (ign, tag, donations)) in enumerate(dump)) or '__**No Accounts**__'
 
-        e = discord.Embed(colour=discord.Colour.blue())
-        e.set_author(name='Donations required by today: ' + str(await self.donations_by_today()))
-        e.add_field(name='\u200b', value=players)
-        await ctx.send(embed=e)
+        pages = paginator.EmbedPag(ctx, entries=players, per_page=20, message=ctx.message)
+        await pages.paginate(start_page=1)
+
+        # e = discord.Embed(colour=discord.Colour.blue())
+        # e.set_author(name='Donations required by today: ' + str(await self.donations_by_today()))
+        # e.add_field(name='\u200b', value=players)
+        # await ctx.send(embed=e)
 
     @commands.command()
     async def awdon(self, ctx):
         query = "SELECT ign, tag, userid, difference FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussie Warriors')
 
-        players = '\n'.join(f'{ign} ({tag}): <@{userid}> - `{don} donations`'
+        players = [].extend(f'{ign} ({tag}): <@{userid}> - `{don} donations`'
                             for (index, (ign, tag, userid, don)) in enumerate(dump)) or 'No Members'
 
-        e = discord.Embed(colour=discord.Colour.green())
-        e.set_author(name='Donations required by today: ' + str(await self.donations_by_today()))
-        e.add_field(name='\u200b', value=players)
-        await ctx.send(embed=e)
+        pages = paginator.EmbedPag(ctx, entries=players, per_page=20, message=ctx.message)
+        await pages.paginate(start_page=1)
+
+        # e = discord.Embed(colour=discord.Colour.green())
+        # e.set_author(name='Donations required by today: ' + str(await self.donations_by_today()))
+        # e.add_field(name='\u200b', value=players)
+        # await ctx.send(embed=e)
 
     @commands.command()
     async def a4wdon(self, ctx):
         query = "SELECT ign, tag, userid, difference FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussies 4 War')
 
-        players = '\n'.join(f'{ign} ({tag}): <@{userid}> - `{don} donations`'
+        players = [].extend(f'{ign} ({tag}): <@{userid}> - `{don} donations`'
                             for (index, (ign, tag, userid, don)) in enumerate(dump)) or 'No Members'
 
-        e = discord.Embed(colour=discord.Colour.green())
-        e.set_author(name='Donations required by today: ' + str(await self.donations_by_today()))
-        e.add_field(name='\u200b', value=players)
-        await ctx.send(embed=e)
+        pages = paginator.EmbedPag(ctx, entries=players, per_page=20, message=ctx.message)
+        await pages.paginate(start_page=1)
+
+        # e = discord.Embed(colour=discord.Colour.green())
+        # e.set_author(name='Donations required by today: ' + str(await self.donations_by_today()))
+        # e.add_field(name='\u200b', value=players)
+        # await ctx.send(embed=e)
 
     @commands.command()
     async def avg(self, ctx, mention: discord.Member=None):
