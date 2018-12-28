@@ -127,3 +127,6 @@ class War_Stats:
     async def warstats(self, ctx):
         stats = await self.calculateWarStats()
         await ctx.send(stats)
+
+def setup(bot):
+    bot.add_cog(War_Stats(bot))
