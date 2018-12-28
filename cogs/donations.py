@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import cogs.utils.paginator as paginator
-
+from cogs.utils import checks
 
 class Show_Donations:
     def __init__(self, bot):
@@ -116,6 +116,13 @@ class Show_Donations:
                            'or Wednesday 7am AEST. \n\nIf any messages have been sent in error, '
                            'or something isnt working, please ping <@230214242618441728>')
         self.bot.donation_ping_webhook.send(embed=eh)
+
+    @commands.command()
+    @checks.manage_server()
+    @checks.mod_commands()
+    async def send_pings(self, ctx):
+        await self.send_donation_pings()
+        await ctx.message.delete()
 
 
 def setup(bot):

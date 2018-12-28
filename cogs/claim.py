@@ -3,6 +3,8 @@ from discord.ext import commands
 from cogs.utils import db
 from cogs.utils import paginator
 from asyncpg import exceptions as pgexceptions
+from cogs.utils import checks
+
 
 class Claims(db.Table):
     id = db.PrimaryKeyColumn()
@@ -143,6 +145,7 @@ class Claim:
         await ctx.message.add_reaction('\u2705')
 
     @commands.command()
+    @checks.mod_commands()
     async def exempt(self, ctx, tag_or_ign: str, true_false: bool):
         if tag_or_ign.startswith('#'):
 
