@@ -53,7 +53,9 @@ class Show_Donations:
 
         unique_ids = set([n[0] for n in dump])  # unique list of discord id's so can group acc's by discord user
 
-        members = []  # list of each discord user after we have made our string
+        members = ['Donations required by today: ' + str(await self.donations_by_today())]
+        # list of each discord user after we have made our string
+
         for user in unique_ids:
             #  make string of accounts in format ign (tag): donation\n ...more accounts
             string = '\n'.join(f'{n[1]} ({n[2]}): `{n[3]} don`' for n in dump if n[0] == user)
@@ -75,7 +77,9 @@ class Show_Donations:
 
         unique_ids = set([n[0] for n in dump])  # unique list of discord id's so can group acc's by discord user
 
-        members = []  # list of each discord user after we have made our string
+        members = ['Donations required by today: ' + str(await self.donations_by_today())]
+        # list of each discord user after we have made our string
+
         for user in unique_ids:
             #  make string of accounts in format ign (tag): donation\n ...more accounts
             string = '\n'.join(f'{n[1]} ({n[2]}): `{n[3]} don`' for n in dump if n[0] == user)
