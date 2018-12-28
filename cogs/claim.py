@@ -207,6 +207,8 @@ class Claim:
         query = "SELECT ign, tag, userid FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussie Warriors')
 
+        unique_ids = set([n[2] for n in dump])  # unique list of discord id's so can group acc's by discord user
+
         claimed_tags = [x['tag'] for x in dump]
 
         unclaimed_tags = []
@@ -219,13 +221,20 @@ class Claim:
                 unclaimed_ign.append(name)
 
         entries = ['__**Claimed Bases**__']
-        entries.extend(f'{ign} ({tag}): <@{userid}>'
-                       for (index, (ign, tag, userid)) in enumerate(dump) or 'No Members')
+        # entries.extend(f'{ign} ({tag}): <@{userid}>'
+        #                for (index, (ign, tag, userid)) in enumerate(dump) or 'No Members')
+
+        for user in unique_ids:
+            #  make string of accounts in format ign (tag): donation\n ...more accounts
+            string = '\n'.join(f'   {n[0]} ({n[1]})' for n in dump if n[2] == user)
+            new_string = f'<@{user}>\n{string}'  # add the mention at top of string
+            entries.append(new_string)  # add to our list of strings
+
         entries.append('__**Un-Claimed Bases**__')
         entries.extend(f'{unclaimed_ign[index]} ({unclaimed_tags[index]})'
                        for index in range(len(unclaimed_ign)) or 'No Members')
 
-        pages = paginator.EmbedPag(ctx, entries=entries, per_page=20, message=ctx.message)
+        pages = paginator.EmbedPag(ctx, entries=entries, per_page=12, message=ctx.message)
         await pages.paginate(start_page=1)
 
     @commands.command(aliases=['a4wgm'])
@@ -235,6 +244,8 @@ class Claim:
         query = "SELECT tag, ign, userid FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussies 4 War')
 
+        unique_ids = set([n[2] for n in dump])  # unique list of discord id's so can group acc's by discord user
+
         claimed_tags = [x['tag'] for x in dump]
 
         unclaimed_tags = []
@@ -248,13 +259,21 @@ class Claim:
                 unclaimed_ign.append(name)
 
         entries = ['__**Claimed Bases**__']
-        entries.extend(f'{ign} ({tag}): <@{userid}>'
-                       for (index, (ign, tag, userid)) in enumerate(dump) or 'No Members')
+
+        # entries.extend(f'{ign} ({tag}): <@{userid}>'
+        #                for (index, (ign, tag, userid)) in enumerate(dump) or 'No Members')
+
+        for user in unique_ids:
+            #  make string of accounts in format ign (tag): donation\n ...more accounts
+            string = '\n'.join(f'   {n[0]} ({n[1]})' for n in dump if n[2] == user)
+            new_string = f'<@{user}>\n{string}'  # add the mention at top of string
+            entries.append(new_string)  # add to our list of strings
+
         entries.append('__**Un-Claimed Bases**__')
         entries.extend(f'{unclaimed_ign[index]} ({unclaimed_tags[index]})'
                        for index in range(len(unclaimed_ign)) or 'No Members')
 
-        pages = paginator.EmbedPag(ctx, entries=entries, per_page=20, message=ctx.message)
+        pages = paginator.EmbedPag(ctx, entries=entries, per_page=12, message=ctx.message)
         await pages.paginate(start_page=1)
 
 
