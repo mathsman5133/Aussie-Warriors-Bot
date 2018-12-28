@@ -20,7 +20,7 @@ class War_Stats:
     #Second helper function, This is used to calculate how many attacks were defended by base
     def getdefenses(self, defenderTag, currentWar):
         # Get all the attacks on base (returns [('attackerTag',stars)..] list)
-        attacksOnBase = [(attack['attackerTag'], attack['stars']) for members in currentWar['opponent']['members'] for
+        attacksOnBase = [(attack['attackerTag'], attack['stars']) for members in currentWar['opponent']['members'] if 'attack' in members.keys() for
                          attack in members['attacks'] if attack['defenderTag'] == defenderTag]
 
         # varibles to store corresponding values
@@ -69,20 +69,30 @@ class War_Stats:
 
             # Some values which will be used to either calculate stats or be fed directly into database
             playerTownhall = member['townhallLevel']
-            attacks = member['attacks']
 
-            # Used to store the successful hits i.e 3stars
-            successfulHits = []
+            #Check if attacks exist
+            if 'attacks' in member.keys():
+                attacks = member['attacks']
 
-            # Loop over every attack by member
-            for attack in attacks:
-                # Find enemy TH level
-                enemyTownhall = self.getTownHallLevel(attack['defenderTag'], currentWar)
+                # Used to store the successful hits i.e 3stars
+                successfulHits = []
 
-                # Only count attack if either player th = enemy th
-                if enemyTownhall == playerTownhall:
-                    hit = 1 if attack['stars'] == 3 else 0
-                    successfulHits.append(hit)
+                # Loop over every attack by member
+                for attack in attacks:
+                    # Find enemy TH level
+                    enemyTownhall = self.getTownHallLevel(attack['defenderTag'], currentWar)
+
+                    # Only count attack if either player th = enemy th
+                    if enemyTownhall == playerTownhall:
+                        hit = 1 if attack['stars'] == 3 else 0
+                        successfulHits.append(hit)
+
+                # calculate hitrate
+                hr = str(sum(successfulHits)) + '/' + str(len(successfulHits))
+            else:
+                #If no attacks set hitrate = 0/0
+                hr = '0/0'
+
 
             # Get Defenses for the member (Returns defendedAttacks,totalAttacks on base)
             defendedAttacks, totalAttacksOnBase = self.getdefenses(member['tag'], currentWar)
@@ -93,8 +103,6 @@ class War_Stats:
             playerTag = member['tag']
             playerTownhall = str(playerTownhall)
 
-            # calculate hitrate and defenserate respectively
-            hr = str(sum(successfulHits)) + '/' + str(len(successfulHits))
             dr = str(defendedAttacks) + '/' + str(totalAttacksOnBase)
 
             # Save all info into a tuple (Easier to insert into db)
