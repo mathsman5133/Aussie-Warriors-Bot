@@ -8,7 +8,7 @@ async def oneTimeSetup(coc,connection, coc_token):
 
 
     #Create a cursor & define Tag
-    cursor = connection.cursor()
+    cursor = connection
     clanTag = '#P0LYJC8C'
 
     # #Create a table to store clash tag and discord ID
@@ -61,6 +61,6 @@ async def oneTimeSetup(coc,connection, coc_token):
                          'th VARCHAR (3) NOT NULL '+
                          'hitrate varchar(10) NOT NULL '+
                          'defenserate varchar (10) NOT NULL)')
-    cursor.close()
-    connection.commit()
+    # cursor.close()
+    # connection.commit()
 
