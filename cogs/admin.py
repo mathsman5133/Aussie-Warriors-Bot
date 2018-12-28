@@ -352,9 +352,9 @@ class Admin:
 
             await connection.execute('Create table war_stats(war_no smallint NOT NULL,' +
                                  'name VARCHAR(40) NOT NULL,' +
-                                 'tag varchar (20) NOT NULL ' +
-                                 'th VARCHAR (3) NOT NULL ' +
-                                 'hitrate varchar(10) NOT NULL ' +
+                                 'tag varchar (20) NOT NULL, ' +
+                                 'th VARCHAR (3) NOT NULL, ' +
+                                 'hitrate varchar(10) NOT NULL, ' +
                                  'defenserate varchar (10) NOT NULL)')
         await oneTimeSetup(ctx.db)
 
