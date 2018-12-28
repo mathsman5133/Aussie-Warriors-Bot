@@ -72,7 +72,7 @@ class Show_Donations:
 
     @commands.command()
     async def a4wdon(self, ctx):
-        query = "SELECT ign, tag, userid, difference FROM claims WHERE clan = $1"
+        query = "SELECT userid, ign, tag, difference FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussies 4 War')
 
         unique_ids = set([n[0] for n in dump])  # unique list of discord id's so can group acc's by discord user
