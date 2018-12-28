@@ -31,8 +31,12 @@ class Show_Donations:
         query = 'SELECT ign, tag, difference FROM claims WHERE userid = $1'
         dump = await ctx.db.fetch(query, mention.id)
 
-        players = [].extend(f'{ign} ({tag}): `{donations} donations` '
-                            for (index, (ign, tag, donations)) in enumerate(dump)) or '__**No Accounts**__'
+        players = []
+        try:
+            players.extend(f'{ign} ({tag}): `{donations} donations` '
+                           for (index, (ign, tag, donations)) in enumerate(dump))
+        except TypeError:
+            players.append('__**No Accounts**__')
 
         pages = paginator.EmbedPag(ctx, entries=players, per_page=20, message=ctx.message)
         await pages.paginate(start_page=1)
@@ -46,9 +50,9 @@ class Show_Donations:
     async def awdon(self, ctx):
         query = "SELECT ign, tag, userid, difference FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussie Warriors')
-
-        players = [].extend(f'{ign} ({tag}): <@{userid}> - `{don} donations`'
-                            for (index, (ign, tag, userid, don)) in enumerate(dump)) or 'No Members'
+        players = []
+        players.extend(f'{ign} ({tag}): <@{userid}> - `{don} donations`'
+                       for (index, (ign, tag, userid, don)) in enumerate(dump)) or 'No Members'
 
         pages = paginator.EmbedPag(ctx, entries=players, per_page=20, message=ctx.message)
         await pages.paginate(start_page=1)
@@ -63,8 +67,9 @@ class Show_Donations:
         query = "SELECT ign, tag, userid, difference FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussies 4 War')
 
-        players = [].extend(f'{ign} ({tag}): <@{userid}> - `{don} donations`'
-                            for (index, (ign, tag, userid, don)) in enumerate(dump)) or 'No Members'
+        players = []
+        players.extend(f'{ign} ({tag}): <@{userid}> - `{don} donations`'
+                       for (index, (ign, tag, userid, don)) in enumerate(dump)) or 'No Members'
 
         pages = paginator.EmbedPag(ctx, entries=players, per_page=20, message=ctx.message)
         await pages.paginate(start_page=1)
