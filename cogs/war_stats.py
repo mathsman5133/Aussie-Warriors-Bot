@@ -131,6 +131,63 @@ class War_Stats:
         # cursor.close()
         # connection.commit()
 
+    async def statsForTh(townhallLevel):
+        '''Takes in townhall as arguement and gives the stats for that particular townhall level'''
+
+        #Get all the data for the particular townhall
+        cursor.execute(f"select name,hitrate,defenserate from war_stats where th = '{townhallLevel}'")
+        result = cursor.fetchall()
+
+        #Get all distinct name for particular townhall (We will use this to display on discord)
+        cursor.execute(f"select distinct name from war_stats where th = '{townhallLevel}'")
+        names = [x[0] for x in cursor.fetchall()]
+
+        #Create a dict of data for easy processing
+        data = [{'name':x[0],'hitrate':x[1],'defenserate':x[2]} for x in result]
+
+        #two lists that will store respective stats
+        offensiveStats = []
+        defensiveStats = []
+
+        #iterate over all names
+        for name in names:
+
+            #Variables to hold values to find out hitrates and defenserates
+            cummulativeHits = 0
+            cummulativeTotalAttacks = 0
+            cummulativeDefended = 0
+            cummulativeTotalDefenses = 0
+
+            #Iterate over all data
+            for x in data:
+                #If the name matches
+                if x['name'] == name:
+                    #Offensive stats calculations
+                    temp_hitrate = x['hitrate'].split('/')
+                    cummulativeHits += int(temp_hitrate[0])
+                    cummulativeTotalAttacks += int(temp_hitrate[1])
+
+                    #Defensive stats calculations
+                    temp_defenserate = x['defenserate'].split('/')
+                    cummulativeDefended += int(temp_defenserate[0])
+                    cummulativeTotalDefenses += int(temp_defenserate[1])
+
+            #Format all stats
+            hitrate = str(cummulativeHits)+'/'+str(cummulativeTotalAttacks)
+            defenserate = str(cummulativeDefended)+'/'+str(cummulativeTotalDefenses)
+            hitratePer = f"{cummulativeHits*100/cummulativeTotalAttacks:.2f}"+ '%'
+            defenseratePer = f"{cummulativeDefended*100/cummulativeTotalDefenses:.2f}"+'%'
+
+            #Create 2 dicts, offense and deffense
+            offense = {'name':name,'hitrate':hitrate,'hitratePer':hitratePer}
+            offensiveStats.append(offense)
+            defense = {'name':name,'defenserate':defenserate,'defenseratePer':defenseratePer}
+            defensiveStats.append(defense)
+
+        stats = {'offense':offensiveStats,'defense':defensiveStats}
+
+        return stats
+
     @commands.command()
     async def warstats(self, ctx):
         stats = await self.calculateWarStats()
