@@ -242,7 +242,7 @@ class Claim:
 
     @commands.command(aliases=['a4wgm'])
     async def a4w_get_members(self, ctx):
-        clan_members = await self.bot.coc.clans('#808URP9P').members.get()
+        clan_members = await self.bot.coc.clans('#808URP9P').members.get(self.bot.coc_token)
 
         query = "SELECT tag, ign, userid FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussies 4 War')
