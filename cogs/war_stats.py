@@ -43,7 +43,7 @@ class War_Stats:
             off_hr = '\n'.join(strings)
 
             string_off = f'__**Offensive Stats for TH{n}v{n}**__'
-            string_off = f"{string_off}\n```{base.format('HR', 'HR %', 'IGN')}\n{off_hr}"
+            string_off = f" ```{string_off}```\n{base.format('HR', 'HR %', 'IGN')}\n{off_hr}"
 
             entries.append(string_off)
 
