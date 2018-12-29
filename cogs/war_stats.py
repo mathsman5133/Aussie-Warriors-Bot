@@ -233,7 +233,7 @@ class War_Stats:
 
             strings = []
             for member in stats['defense']:
-                strings.append(base.format(member['hitrate'], member['hitratePer'], member['name']))
+                strings.append(base.format(member['defenserate'], member['defenseratePer'], member['name']))
             def_hr = '\n'.join(strings)
             # def_hr = '\n'.join(base.format(hr.value, hr_percent.value, ign.value) for
             #                    (index, (ign, hr, hr_percent)) in enumerate(stats['defense']))
