@@ -215,7 +215,7 @@ class War_Stats:
 
         for n in th:
             stats = await self.statsForTh(n)
-            base = '{:>0}{:>8}{:>20}'
+            base = '{:>0}{:>8}{:>16}'
 
             # off_hr = '\n'.join(base.format(hr, hr_percent, ign) for
             #                    (index, (ign, hr, hr_percent)) in enumerate(stats['offense']))
