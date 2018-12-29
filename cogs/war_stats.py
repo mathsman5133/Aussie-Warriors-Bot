@@ -222,7 +222,7 @@ class War_Stats:
             #                    (index, (ign, hr, hr_percent)) in enumerate(stats['offense']))
 
             strings = []
-            for member in stats['defense']:
+            for member in stats['offense']:
                 strings.append(base.format(member['hitrate'], member['hitratePer'], member['name']))
             off_hr = '\n'.join(strings)
 
