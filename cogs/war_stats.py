@@ -241,7 +241,7 @@ class War_Stats:
             string_def = f"{string_def}\n```{base.format('HR', 'HR %', 'IGN')}\n{def_hr}```"
             entries.append(string_def)
 
-        pages = paginator.EmbedPag(ctx, entries=entries, per_page=1, message=ctx.message)
+        pages = paginator.MsgPag(ctx, entries=entries, per_page=1, message=ctx.message)
         await pages.paginate(start_page=1)
 
 
