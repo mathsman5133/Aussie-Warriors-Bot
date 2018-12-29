@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-
+from cogs.utils import checks, paginator
 
 class War_Stats:
     def __init__(self, bot):
@@ -131,19 +131,18 @@ class War_Stats:
         # cursor.close()
         # connection.commit()
 
-    async def statsForTh(townhallLevel):
+    async def statsForTh(self, townhallLevel):
         '''Takes in townhall as arguement and gives the stats for that particular townhall level'''
 
         #Get all the data for the particular townhall
-        cursor.execute(f"select name,hitrate,defenserate from war_stats where th = '{townhallLevel}'")
-        result = cursor.fetchall()
+        result = await self.bot.pool.fetch(f"select name,hitrate,defenserate from war_stats where th = '{townhallLevel}'")
 
         #Get all distinct name for particular townhall (We will use this to display on discord)
-        cursor.execute(f"select distinct name from war_stats where th = '{townhallLevel}'")
-        names = [x[0] for x in cursor.fetchall()]
+        dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th = '{townhallLevel}'")
+        names = [x[0] for x in dump]
 
         #Create a dict of data for easy processing
-        data = [{'name':x[0],'hitrate':x[1],'defenserate':x[2]} for x in result]
+        data = [{'name': x[0], 'hitrate': x[1], 'defenserate':x[2]} for x in result]
 
         #two lists that will store respective stats
         offensiveStats = []
@@ -184,14 +183,53 @@ class War_Stats:
             defense = {'name':name,'defenserate':defenserate,'defenseratePer':defenseratePer}
             defensiveStats.append(defense)
 
-        stats = {'offense':offensiveStats,'defense':defensiveStats}
+        stats = {'offense': offensiveStats, 'defense': defensiveStats}
 
         return stats
 
     @commands.command()
-    async def warstats(self, ctx):
-        stats = await self.calculateWarStats()
-        await ctx.send(stats)
+    @checks.mod_commands()
+    async def statsdump(self, ctx):
+        await self.calculateWarStats()
+        await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
+
+    @commands.command()
+    async def warstats(self, ctx, th: int=None):
+        all_ths = [9, 10, 11, 12]
+        print(th)
+        if th not in all_ths:
+            raise commands.BadArgument('Please choose a valid TH: `9`, `10`, `11`, `12`')
+
+        if not th:
+            th = all_ths
+        else:
+            th = [th]
+
+        entries = []
+
+        for n in th:
+            print(n)
+            stats = await self.statsForTh(n)
+            base = '{:>0}{:>6}{:>12}'
+
+            off_hr = '\n'.join(base.format(hr, hr_percent, ign) for
+                               (index, (ign, hr, hr_percent)) in enumerate(stats['offence']))
+
+            string_off = f'__**Offensive Stats for TH{n}v{n}**__'
+            string_off = f"{string_off}\n{base.format('HR', 'HR %', 'IGN')}\n{off_hr}"
+
+            entries.append(string_off)
+
+            def_hr = '\n'.join(base.format(hr, hr_percent, ign) for
+                               (index, (ign, hr, hr_percent)) in enumerate(stats['defence']))
+
+            string_def = f'__**Offensive Stats for TH{n}v{n}**__'
+            string_def = f"{string_def}\n{base.format('HR', 'HR %', 'IGN')}\n{def_hr}"
+            entries.append(string_def)
+
+        pages = paginator.EmbedPag(ctx, entries=entries, per_page=1, message=ctx.message)
+        await pages.paginate(start_page=1)
+
 
 def setup(bot):
     bot.add_cog(War_Stats(bot))
