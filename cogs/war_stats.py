@@ -202,7 +202,7 @@ class War_Stats:
     @commands.command()
     async def warstats(self, ctx, th: int=None):
         all_ths = [9, 10, 11, 12]
-        print(th)
+
         if th not in all_ths:
             raise commands.BadArgument('Please choose a valid TH: `9`, `10`, `11`, `12`')
 
@@ -214,9 +214,8 @@ class War_Stats:
         entries = []
 
         for n in th:
-            print(n)
             stats = await self.statsForTh(n)
-            base = '{:>0}{:>6}{:>12}'
+            base = '{:>0}{:>8}{:>20}'
 
             # off_hr = '\n'.join(base.format(hr, hr_percent, ign) for
             #                    (index, (ign, hr, hr_percent)) in enumerate(stats['offense']))
