@@ -227,7 +227,7 @@ class War_Stats:
             entries.append(string_off)
 
             def_hr = '\n'.join(base.format(hr, hr_percent, ign) for
-                               (index, (ign, hr, hr_percent)) in enumerate(stats['defense']))
+                               (h, ign, h, hr, h, hr_percent) in stats['defense'].items())
 
             string_def = f'__**Offensive Stats for TH{n}v{n}**__'
             string_def = f"{string_def}\n{base.format('HR', 'HR %', 'IGN')}\n{def_hr}"
