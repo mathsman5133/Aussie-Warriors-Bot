@@ -218,16 +218,25 @@ class War_Stats:
             stats = await self.statsForTh(n)
             base = '{:>0}{:>6}{:>12}'
 
-            off_hr = '\n'.join(base.format(hr, hr_percent, ign) for
-                               (index, (ign, hr, hr_percent)) in enumerate(stats['offense']))
+            # off_hr = '\n'.join(base.format(hr, hr_percent, ign) for
+            #                    (index, (ign, hr, hr_percent)) in enumerate(stats['offense']))
+
+            strings = []
+            for member in stats['defense']:
+                strings.append(base.format(member['hitrate'], member['hitratePer'], member['name']))
+            off_hr = '\n'.join(strings)
 
             string_off = f'__**Offensive Stats for TH{n}v{n}**__'
             string_off = f"{string_off}\n{base.format('HR', 'HR %', 'IGN')}\n{off_hr}"
 
             entries.append(string_off)
 
-            def_hr = '\n'.join(base.format(hr.value, hr_percent.value, ign.value) for
-                               (index, (ign, hr, hr_percent)) in enumerate(stats['defense']))
+            strings = []
+            for member in stats['defense']:
+                strings.append(base.format(member['hitrate'], member['hitratePer'], member['name']))
+            def_hr = '\n'.join(strings)
+            # def_hr = '\n'.join(base.format(hr.value, hr_percent.value, ign.value) for
+            #                    (index, (ign, hr, hr_percent)) in enumerate(stats['defense']))
 
             string_def = f'__**Offensive Stats for TH{n}v{n}**__'
             string_def = f"{string_def}\n{base.format('HR', 'HR %', 'IGN')}\n{def_hr}"
