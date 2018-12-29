@@ -1,23 +1,78 @@
-import discord
 from discord.ext import commands
 from cogs.utils import checks, paginator
+
 
 class War_Stats:
     def __init__(self, bot):
         self.bot = bot
 
-    #First helper function, This is used to find the TH of a player given his/her clash Tag
+    async def __error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send(error)
+
+    @commands.command()
+    @checks.mod_commands()
+    async def statsdump(self, ctx):
+        await self.calculateWarStats()
+        await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
+
+    @commands.command()
+    async def warstats(self, ctx, th: int = None):
+        all_ths = [9, 10, 11, 12]
+
+        if th not in all_ths:
+            raise commands.BadArgument('Please choose a valid TH: `9`, `10`, `11`, `12`')
+
+        if not th:
+            th = all_ths
+        else:
+            th = [th]
+
+        entries = []
+
+        for n in th:
+            stats = await self.statsForTh(n)
+            base = '{:>0}{:>10}{:>16}'
+
+            # off_hr = '\n'.join(base.format(hr, hr_percent, ign) for
+            #                    (index, (ign, hr, hr_percent)) in enumerate(stats['offense']))
+
+            strings = []
+            for member in stats['offense']:
+                strings.append(base.format(member['hitrate'], member['hitratePer'], member['name']))
+            off_hr = '\n'.join(strings)
+
+            string_off = f'__**Offensive Stats for TH{n}v{n}**__'
+            string_off = f"{string_off}\n```{base.format('HR', 'HR %', 'IGN')}\n{off_hr}"
+
+            entries.append(string_off)
+
+            strings = []
+            for member in stats['defense']:
+                strings.append(base.format(member['defenserate'], member['defenseratePer'], member['name']))
+            def_hr = '\n'.join(strings)
+            # def_hr = '\n'.join(base.format(hr.value, hr_percent.value, ign.value) for
+            #                    (index, (ign, hr, hr_percent)) in enumerate(stats['defense']))
+
+            string_def = f'__**Offensive Stats for TH{n}v{n}**__'
+            string_def = f" ```{string_def}```\n{base.format('HR', 'HR %', 'IGN')}\n{def_hr}"
+            entries.append(string_def)
+
+        pages = paginator.MsgPag(ctx, entries=entries, per_page=1, message=ctx.message)
+        await pages.paginate(start_page=1)
+
+    # First helper function, This is used to find the TH of a player given his/her clash Tag
     def getTownHallLevel(self, clashTag,currentWar):
-        #First we search the enemy clan for tag (Assuming it belongs to enemy clan)
+        # First we search the enemy clan for tag (Assuming it belongs to enemy clan)
         enemySearch = [x['townhallLevel'] for x in currentWar['opponent']['members'] if x['tag']==clashTag]
-        #If it exists, we return TH
+        # If it exists, we return TH
         if enemySearch:
             return enemySearch[0]
         else:
-            #Else we search and return TH from out clan (i.e the tag belongs to our clan)
+            # Else we search and return TH from out clan (i.e the tag belongs to our clan)
             return [x['townhallLevel'] for x in currentWar['clan']['members'] if x['tag']==clashTag][0]
 
-    #Second helper function, This is used to calculate how many attacks were defended by base
+    # Second helper function, This is used to calculate how many attacks were defended by base
     def getdefenses(self, defenderTag, currentWar):
         # Get all the attacks on base (returns [('attackerTag',stars)..] list)
         attacksOnBase = [(attack['attackerTag'], attack['stars']) for members in currentWar['opponent']['members'] if 'attack' in members.keys() for
@@ -93,7 +148,6 @@ class War_Stats:
                 #If no attacks set hitrate = 0/0
                 hr = '0/0'
 
-
             # Get Defenses for the member (Returns defendedAttacks,totalAttacks on base)
             defendedAttacks, totalAttacksOnBase = self.getdefenses(member['tag'], currentWar)
 
@@ -134,44 +188,44 @@ class War_Stats:
     async def statsForTh(self, townhallLevel):
         '''Takes in townhall as arguement and gives the stats for that particular townhall level'''
 
-        #Get all the data for the particular townhall
+        # Get all the data for the particular townhall
         result = await self.bot.pool.fetch(f"select name,hitrate,defenserate from war_stats where th = '{townhallLevel}'")
 
-        #Get all distinct name for particular townhall (We will use this to display on discord)
+        # Get all distinct name for particular townhall (We will use this to display on discord)
         dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th = '{townhallLevel}'")
         names = [x[0] for x in dump]
 
-        #Create a dict of data for easy processing
+        # Create a dict of data for easy processing
         data = [{'name': x[0], 'hitrate': x[1], 'defenserate':x[2]} for x in result]
 
-        #two lists that will store respective stats
+        # two lists that will store respective stats
         offensiveStats = []
         defensiveStats = []
 
-        #iterate over all names
+        # iterate over all names
         for name in names:
 
-            #Variables to hold values to find out hitrates and defenserates
+            # Variables to hold values to find out hitrates and defenserates
             cummulativeHits = 0
             cummulativeTotalAttacks = 0
             cummulativeDefended = 0
             cummulativeTotalDefenses = 0
 
-            #Iterate over all data
+            # Iterate over all data
             for x in data:
-                #If the name matches
+                # If the name matches
                 if x['name'] == name:
-                    #Offensive stats calculations
+                    # Offensive stats calculations
                     temp_hitrate = x['hitrate'].split('/')
                     cummulativeHits += int(temp_hitrate[0])
                     cummulativeTotalAttacks += int(temp_hitrate[1])
 
-                    #Defensive stats calculations
+                    # Defensive stats calculations
                     temp_defenserate = x['defenserate'].split('/')
                     cummulativeDefended += int(temp_defenserate[0])
                     cummulativeTotalDefenses += int(temp_defenserate[1])
 
-            #Format all stats
+            # Format all stats
             hitrate = str(cummulativeHits)+'/'+str(cummulativeTotalAttacks)
             defenserate = str(cummulativeDefended)+'/'+str(cummulativeTotalDefenses)
             try:
@@ -183,7 +237,7 @@ class War_Stats:
             except ZeroDivisionError:
                 defenseratePer = '0%'
 
-            #Create 2 dicts, offense and deffense
+            # Create 2 dicts, offense and deffense
             offense = {'name':name,'hitrate':hitrate,'hitratePer':hitratePer}
             offensiveStats.append(offense)
             defense = {'name':name,'defenserate':defenserate,'defenseratePer':defenseratePer}
@@ -192,57 +246,6 @@ class War_Stats:
         stats = {'offense': offensiveStats, 'defense': defensiveStats}
 
         return stats
-
-    @commands.command()
-    @checks.mod_commands()
-    async def statsdump(self, ctx):
-        await self.calculateWarStats()
-        await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
-
-    @commands.command()
-    async def warstats(self, ctx, th: int=None):
-        all_ths = [9, 10, 11, 12]
-
-        if th not in all_ths:
-            raise commands.BadArgument('Please choose a valid TH: `9`, `10`, `11`, `12`')
-
-        if not th:
-            th = all_ths
-        else:
-            th = [th]
-
-        entries = []
-
-        for n in th:
-            stats = await self.statsForTh(n)
-            base = '{:>0}{:>10}{:>16}'
-
-            # off_hr = '\n'.join(base.format(hr, hr_percent, ign) for
-            #                    (index, (ign, hr, hr_percent)) in enumerate(stats['offense']))
-
-            strings = []
-            for member in stats['offense']:
-                strings.append(base.format(member['hitrate'], member['hitratePer'], member['name']))
-            off_hr = '\n'.join(strings)
-
-            string_off = f'__**Offensive Stats for TH{n}v{n}**__'
-            string_off = f" ```{string_off}```\n{base.format('HR', 'HR %', 'IGN')}\n{off_hr}"
-
-            entries.append(string_off)
-
-            strings = []
-            for member in stats['defense']:
-                strings.append(base.format(member['defenserate'], member['defenseratePer'], member['name']))
-            def_hr = '\n'.join(strings)
-            # def_hr = '\n'.join(base.format(hr.value, hr_percent.value, ign.value) for
-            #                    (index, (ign, hr, hr_percent)) in enumerate(stats['defense']))
-
-            string_def = f'__**Offensive Stats for TH{n}v{n}**__'
-            string_def = f" ```{string_def}```\n{base.format('HR', 'HR %', 'IGN')}\n{def_hr}"
-            entries.append(string_def)
-
-        pages = paginator.MsgPag(ctx, entries=entries, per_page=1, message=ctx.message)
-        await pages.paginate(start_page=1)
 
 
 def setup(bot):

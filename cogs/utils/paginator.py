@@ -38,12 +38,13 @@ class MsgPag:
     def get_page(self, page):
         base = (page - 1) * self.per_page
         return self.entries[base:base + self.per_page]
+
     async def show_page(self, page, *, first=False):
         self.current_page = page
         entries = self.get_page(page)
-        p = '```'
+        p = ''
         for t in entries:
-            p += (t)
+            p += t
         print(p)
         self.embed.set_footer(text='Page %s/%s (%s entries)' % (page, self.maximum_pages, len(self.entries)))
         if (not self.paginating):
@@ -51,7 +52,7 @@ class MsgPag:
             return await self.message.channel.send(content=p + '```')
         if (not first):
             self.embed.description = '\n'.join(p)
-            await self.message.edit(content=p + '\nPage %s/%s (%s entries) ```'%(page, self.maximum_pages, len(self.entries)))
+            await self.message.edit(content=p + '\nPage %s/%s (%s entries)```'%(page, self.maximum_pages, len(self.entries)))
             return
         if (not self.permissions.add_reactions):
             raise CannotPaginate('Bot does not have add reactions permission.')
