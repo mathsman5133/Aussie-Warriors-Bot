@@ -54,7 +54,7 @@ class War_Stats:
             # def_hr = '\n'.join(base.format(hr.value, hr_percent.value, ign.value) for
             #                    (index, (ign, hr, hr_percent)) in enumerate(stats['defense']))
 
-            string_def = f'__**Offensive Stats for TH{n}v{n}**__'
+            string_def = f'__**Defensive Stats for TH{n}v{n}**__'
             string_def = f" ```{string_def}```\n{base.format('HR', 'HR %', 'IGN')}\n{def_hr}"
             entries.append(string_def)
 
