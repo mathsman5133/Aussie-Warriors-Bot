@@ -174,8 +174,10 @@ class War_Stats:
             #Format all stats
             hitrate = str(cummulativeHits)+'/'+str(cummulativeTotalAttacks)
             defenserate = str(cummulativeDefended)+'/'+str(cummulativeTotalDefenses)
-            hitratePer = f"{cummulativeHits*100/cummulativeTotalAttacks:.2f}"+ '%'
-            defenseratePer = f"{cummulativeDefended*100/cummulativeTotalDefenses:.2f}"+'%'
+            hitratePer = f"{cummulativeHits*100/cummulativeTotalAttacks:.2f}%" \
+                if cummulativeTotalAttacks != 0 else '0%'
+            defenseratePer = f"{cummulativeDefended*100/cummulativeTotalDefenses:.2f}%" \
+                if cummulativeTotalAttacks != 0 else '0%'
 
             #Create 2 dicts, offense and deffense
             offense = {'name':name,'hitrate':hitrate,'hitratePer':hitratePer}
