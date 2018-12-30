@@ -32,31 +32,18 @@ class War_Stats:
 
         for n in th:
             stats = await self.statsForTh(n)
-            base = '{:>0}{:>10}{:>16}'
-
-            # off_hr = '\n'.join(base.format(hr, hr_percent, ign) for
-            #                    (index, (ign, hr, hr_percent)) in enumerate(stats['offense']))
+            base = '{:>0}{:>10}{:>16}{:>26}{:>30}'
 
             strings = []
-            for member in stats['offense']:
-                strings.append(base.format(member['hitrate'], member['hitratePer'], member['name']))
-            off_hr = '\n'.join(strings)
+            for memberoff, memberdef in stats['offense'], stats['defense']:
+                strings.append(base.format(memberoff['hitrate'], memberdef['hitratePer'], memberoff['name'],
+                                           memberdef['defenserate'], memberdef['defenseratePer']))
 
-            string_off = f'__**Offensive Stats for TH{n}v{n}**__'
-            string_off = f" ```{string_off}```\n{base.format('HR', 'HR %', 'IGN')}\n{off_hr}"
+            hr = '\n'.join(strings)
 
-            entries.append(string_off)
-
-            strings = []
-            for member in stats['defense']:
-                strings.append(base.format(member['defenserate'], member['defenseratePer'], member['name']))
-            def_hr = '\n'.join(strings)
-            # def_hr = '\n'.join(base.format(hr.value, hr_percent.value, ign.value) for
-            #                    (index, (ign, hr, hr_percent)) in enumerate(stats['defense']))
-
-            string_def = f'__**Defensive Stats for TH{n}v{n}**__'
-            string_def = f" ```{string_def}```\n{base.format('HR', 'HR %', 'IGN')}\n{def_hr}"
-            entries.append(string_def)
+            string = f'__**Stats for TH{n}v{n}**__'
+            string = f" ```{string}```\n{base.format('Off HR', 'HR %', 'IGN', 'Def HR', 'HR %')}\n{hr}"
+            entries.append(string)
 
         pages = paginator.MsgPag(ctx, entries=entries, per_page=1, message=ctx.message)
         await pages.paginate(start_page=1)
