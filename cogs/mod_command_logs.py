@@ -6,7 +6,7 @@ import traceback
 class Command_Logging:
     def __init__(self, bot):
         self.bot = bot
-        self.bot.info_channel_id = 527373033568993282
+        self.bot.info_channel_id = 438572045077446657
         self.bot.mod_commands = []
 
     async def on_command(self, ctx):

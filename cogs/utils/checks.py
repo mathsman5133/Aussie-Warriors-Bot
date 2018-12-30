@@ -46,6 +46,9 @@ def mod_commands():
 
 def restricted_channel(channel_id):
     def pred(ctx):
+        if is_owner():
+            return True
+
         return ctx.channel.id == channel_id
 
     return commands.check(pred)
