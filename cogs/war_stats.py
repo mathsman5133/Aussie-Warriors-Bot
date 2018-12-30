@@ -31,17 +31,17 @@ class War_Stats:
 
         for n in th:
             stats = await self.statsForTh(n)
-            base = '{:>7}{:>10}{:>14}{:>10}{:>7}'
+            base = '{:>7}{:>10}{:>14}{:>10}{:>7}{:>10}'
 
             strings = []
             for member in stats['overall']:
                 strings.append(base.format(member['hitrate'], member['hitratePer'], member['name'],
-                                           member['defenserate'], member['defenseratePer']))
+                                           member['defenserate'], member['defenseratePer'], member['tag']))
 
             hr = '\n'.join(strings)
 
             string = f'__**Stats for TH{n}v{n}**__'
-            string = f" ```{string}```\n{base.format('Off HR', 'HR %', 'IGN', 'Def HR', 'HR %')}\n{hr}"
+            string = f" ```{string}```\n{base.format('Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag')}\n{hr}"
             entries.append(string)
 
         pages = paginator.MsgPag(ctx, entries=entries, per_page=1, message=ctx.message)
@@ -50,7 +50,7 @@ class War_Stats:
     # First helper function, This is used to find the TH of a player given his/her clash Tag
     def getTownHallLevel(self, clashTag,currentWar):
         # First we search the enemy clan for tag (Assuming it belongs to enemy clan)
-        enemySearch = [x['townhallLevel'] for x in currentWar['opponent']['members'] if x['tag']==clashTag]
+        enemySearch = [x['townhallLevel'] for x in currentWar['opponent']['members'] if x['tag'] == clashTag]
         # If it exists, we return TH
         if enemySearch:
             return enemySearch[0]
@@ -175,14 +175,15 @@ class War_Stats:
         '''Takes in townhall as arguement and gives the stats for that particular townhall level'''
 
         # Get all the data for the particular townhall
-        result = await self.bot.pool.fetch(f"select name,hitrate,defenserate from war_stats where th = '{townhallLevel}'")
+        result = await self.bot.pool.fetch(f"select name,hitrate,defenserate,tag"
+                                           f" from war_stats where th = '{townhallLevel}'")
 
         # Get all distinct name for particular townhall (We will use this to display on discord)
         dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th = '{townhallLevel}'")
         names = [x[0] for x in dump]
 
         # Create a dict of data for easy processing
-        data = [{'name': x[0], 'hitrate': x[1], 'defenserate':x[2]} for x in result]
+        data = [{'name': x[0], 'hitrate': x[1], 'defenserate':x[2], 'tag': x[3]} for x in result]
 
         # two lists that will store respective stats
         offensiveStats = []
@@ -197,6 +198,7 @@ class War_Stats:
             cummulativeTotalAttacks = 0
             cummulativeDefended = 0
             cummulativeTotalDefenses = 0
+            tag = ''
 
             # Iterate over all data
             for x in data:
@@ -211,6 +213,7 @@ class War_Stats:
                     temp_defenserate = x['defenserate'].split('/')
                     cummulativeDefended += int(temp_defenserate[0])
                     cummulativeTotalDefenses += int(temp_defenserate[1])
+                    tag += x['tag']
 
             # Format all stats
             hitrate = str(cummulativeHits)+'/'+str(cummulativeTotalAttacks)
@@ -226,11 +229,11 @@ class War_Stats:
 
             # Create 2 dicts, offense and deffense
             overall = {'name': name, 'hitrate': hitrate, 'hitratePer': hitratePer,
-                       'defenserate': defenserate, 'defenseratePer': defenseratePer}
+                       'defenserate': defenserate, 'defenseratePer': defenseratePer, 'tag': tag}
             overall_stats.append(overall)
-            offense = {'name':name,'hitrate':hitrate,'hitratePer':hitratePer}
+            offense = {'name':name,'hitrate':hitrate,'hitratePer':hitratePer, 'tag': tag}
             offensiveStats.append(offense)
-            defense = {'name':name,'defenserate':defenserate,'defenseratePer':defenseratePer}
+            defense = {'name':name,'defenserate':defenserate,'defenseratePer':defenseratePer, 'tag': tag}
             defensiveStats.append(defense)
 
         stats = {'offense': offensiveStats, 'defense': defensiveStats, 'overall': overall_stats}
