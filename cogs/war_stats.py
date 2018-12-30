@@ -31,7 +31,7 @@ class War_Stats:
 
         for n in th:
             stats = await self.statsForTh(n)
-            base = '{:>4}{:>8}{:>14}{:>22}{:>26}'
+            base = '{:>7}{:>10}{:>14}{:>18}{:>22}'
 
             strings = []
             for member in stats['overall']:
@@ -225,7 +225,7 @@ class War_Stats:
                 defenseratePer = '0%'
 
             # Create 2 dicts, offense and deffense
-            overall = {'name': name, 'hitrate': hitratePer, 'hitratePer': hitratePer,
+            overall = {'name': name, 'hitrate': hitrate, 'hitratePer': hitratePer,
                        'defenserate': defenserate, 'defenseratePer': defenseratePer}
             overall_stats.append(overall)
             offense = {'name':name,'hitrate':hitrate,'hitratePer':hitratePer}
