@@ -42,3 +42,10 @@ def mod_commands():
         ctx.bot.mod_commands.append(ctx)
         return True
     return commands.check(pred)
+
+
+def restricted_channel(channel_id):
+    def pred(ctx):
+        return ctx.channel.id == channel_id
+
+    return commands.check(pred)

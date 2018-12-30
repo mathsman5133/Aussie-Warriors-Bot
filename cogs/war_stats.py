@@ -6,6 +6,9 @@ class War_Stats:
     def __init__(self, bot):
         self.bot = bot
 
+    LEAGUE_BOT_CHANNEL = 528822099360612352
+    CLAN_TAG = '#P0LYJC8C'
+
     async def __error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             await ctx.send(error)
@@ -17,6 +20,7 @@ class War_Stats:
         await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
 
     @commands.command()
+    # @checks.restricted_channel(LEAGUE_BOT_CHANNEL)
     async def warstats(self, ctx, th: int = None):
         all_ths = [9, 10, 11, 12]
 
@@ -48,7 +52,7 @@ class War_Stats:
         await pages.paginate(start_page=1)
 
     # First helper function, This is used to find the TH of a player given his/her clash Tag
-    def getTownHallLevel(self, clashTag,currentWar):
+    def getTownHallLevel(self, clashTag, currentWar):
         # First we search the enemy clan for tag (Assuming it belongs to enemy clan)
         enemySearch = [x['townhallLevel'] for x in currentWar['opponent']['members'] if x['tag'] == clashTag]
         # If it exists, we return TH
@@ -92,11 +96,9 @@ class War_Stats:
         updates the war_stats table by removing the 20th war and inserting the latest war'''
 
         # create cursor & define tag
-        # clanTag = '#P0LYJC8C'
-        clanTag = '#CVCJR89'
 
         # Query to get details for current war
-        currentWar = await self.bot.coc.clans(clanTag).currentwar().get(self.bot.coc_token)
+        currentWar = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
 
         # If war hasn't ended yet don't update or calculate anything
         if currentWar['state'] != 'warEnded':
