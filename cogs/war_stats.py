@@ -20,11 +20,10 @@ class War_Stats:
     async def warstats(self, ctx, th: int = None):
         all_ths = [9, 10, 11, 12]
 
-        if th not in all_ths:
-            raise commands.BadArgument('Please choose a valid TH: `9`, `10`, `11`, `12`')
-
         if not th:
             th = all_ths
+        elif th not in all_ths:
+            raise commands.BadArgument('Please choose a valid TH: `9`, `10`, `11`, `12`')
         else:
             th = [th]
 
