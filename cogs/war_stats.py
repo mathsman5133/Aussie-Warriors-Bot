@@ -31,7 +31,7 @@ class War_Stats:
 
         for n in th:
             stats = await self.statsForTh(n)
-            base = '{:>0}{:>10}{:>16}{:>26}{:>30}'
+            base = '{:>4}{:>8}{:>14}{:>22}{:>26}'
 
             strings = []
             for member in stats['overall']:
