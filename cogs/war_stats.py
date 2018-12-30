@@ -34,9 +34,9 @@ class War_Stats:
             base = '{:>0}{:>10}{:>16}{:>26}{:>30}'
 
             strings = []
-            for memberoff, memberdef in stats['offense'], stats['defense']:
-                strings.append(base.format(memberoff['hitrate'], memberdef['hitratePer'], memberoff['name'],
-                                           memberdef['defenserate'], memberdef['defenseratePer']))
+            for member in stats['overall']:
+                strings.append(base.format(member['hitrate'], member['hitratePer'], member['name'],
+                                           member['defenserate'], member['defenseratePer']))
 
             hr = '\n'.join(strings)
 
@@ -187,6 +187,7 @@ class War_Stats:
         # two lists that will store respective stats
         offensiveStats = []
         defensiveStats = []
+        overall_stats = []
 
         # iterate over all names
         for name in names:
@@ -224,12 +225,15 @@ class War_Stats:
                 defenseratePer = '0%'
 
             # Create 2 dicts, offense and deffense
+            overall = {'name': name, 'hitrate': hitratePer, 'hitratePer': hitratePer,
+                       'defenserate': defenserate, 'defenseratePer': defenseratePer}
+            overall_stats.append(overall)
             offense = {'name':name,'hitrate':hitrate,'hitratePer':hitratePer}
             offensiveStats.append(offense)
             defense = {'name':name,'defenserate':defenserate,'defenseratePer':defenseratePer}
             defensiveStats.append(defense)
 
-        stats = {'offense': offensiveStats, 'defense': defensiveStats}
+        stats = {'offense': offensiveStats, 'defense': defensiveStats, 'overall': overall_stats}
 
         return stats
 
