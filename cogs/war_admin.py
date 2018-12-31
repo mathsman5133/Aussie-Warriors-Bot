@@ -5,11 +5,11 @@ import asyncpg.exceptions as pgexceptions
 from cogs.utils import checks, db
 
 
-class last_war(db.Table()):
+class last_war(db.Table):
     tag = db.Column(db.String())
 
 
-class tag_to_id(db.Table()):
+class tag_to_id(db.Table):
     id = db.Column(db.Integer(big=True))
     tag = db.Column(db.String())
 
