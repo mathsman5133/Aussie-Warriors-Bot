@@ -3,7 +3,8 @@ from discord.ext import commands
 import datetime
 import traceback
 
-class Command_Logging:
+
+class CommandLogging:
     def __init__(self, bot):
         self.bot = bot
         self.bot.info_channel_id = 438572045077446657
@@ -71,4 +72,4 @@ class Command_Logging:
 
 
 def setup(bot):
-    bot.add_cog(Command_Logging(bot))
+    bot.add_cog(CommandLogging(bot))

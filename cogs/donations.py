@@ -4,7 +4,7 @@ import cogs.utils.paginator as paginator
 from cogs.utils import checks
 
 
-class Show_Donations:
+class ShowDonations:
     def __init__(self, bot):
         self.bot = bot
 
@@ -41,11 +41,6 @@ class Show_Donations:
         pages = paginator.EmbedPag(ctx, entries=players, per_page=20, message=ctx.message)
         await pages.paginate(start_page=1)
 
-        # e = discord.Embed(colour=discord.Colour.blue())
-        # e.set_author(name='Donations required by today: ' + str(await self.donations_by_today()))
-        # e.add_field(name='\u200b', value=players)
-        # await ctx.send(embed=e)
-
     @commands.command()
     async def awdon(self, ctx):
         query = "SELECT userid, ign, tag, difference FROM claims WHERE clan = $1 ORDER BY userid ASC;"
@@ -65,11 +60,6 @@ class Show_Donations:
         pages = paginator.EmbedPag(ctx, entries=members, per_page=10, message=ctx.message)  # paginate it
         await pages.paginate(start_page=1)
 
-        # e = discord.Embed(colour=discord.Colour.green())
-        # e.set_author(name='Donations required by today: ' + str(await self.donations_by_today()))
-        # e.add_field(name='\u200b', value=players)
-        # await ctx.send(embed=e)
-
     @commands.command()
     async def a4wdon(self, ctx):
         query = "SELECT userid, ign, tag, difference FROM claims WHERE clan = $1"
@@ -88,11 +78,6 @@ class Show_Donations:
 
         pages = paginator.EmbedPag(ctx, entries=members, per_page=10, message=ctx.message)
         await pages.paginate(start_page=1)
-
-        # e = discord.Embed(colour=discord.Colour.green())
-        # e.set_author(name='Donations required by today: ' + str(await self.donations_by_today()))
-        # e.add_field(name='\u200b', value=players)
-        # await ctx.send(embed=e)
 
     @commands.command()
     async def avg(self, ctx, mention: discord.Member=None):
@@ -116,6 +101,13 @@ class Show_Donations:
     @commands.command(name='myavg')
     async def myavg(self, ctx):
         await ctx.invoke(self.avg, ctx.author)
+
+    @commands.command()
+    @checks.manage_server()
+    @checks.mod_commands()
+    async def send_pings(self, ctx):
+        await self.send_donation_pings()
+        await ctx.message.delete()
 
     async def send_donation_pings(self):
         query = "SELECT userid, average FROM averages WHERE warning = $1"
@@ -147,13 +139,6 @@ class Show_Donations:
                            'or something isnt working, please ping <@230214242618441728>')
         self.bot.donation_ping_webhook.send(embed=eh)
 
-    @commands.command()
-    # @checks.manage_server()
-    @checks.mod_commands()
-    async def send_pings(self, ctx):
-        await self.send_donation_pings()
-        await ctx.message.delete()
-
 
 def setup(bot):
-    bot.add_cog(Show_Donations(bot))
+    bot.add_cog(ShowDonations(bot))

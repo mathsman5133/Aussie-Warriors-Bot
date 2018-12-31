@@ -34,6 +34,57 @@ class Update:
             await ctx.send(f'Missing required argument {error}!')
             await ctx.show_help()
 
+    @commands.command()
+    @checks.manage_server()
+    @checks.mod_commands()
+    async def update_required(self, ctx):
+        await self.update_donations_by_today()
+        await ctx.message.add_reaction('\u2705')
+
+    @commands.command(name='refavg')
+    @checks.manage_server()
+    @checks.mod_commands()
+    async def _refresh_avg(self, ctx):
+        await self.refresh_avg()
+        await ctx.message.add_reaction('\u2705')
+
+    @commands.command(name='upd')
+    @checks.manage_server()
+    @checks.mod_commands()
+    async def _update(self, ctx):
+        await self.update()
+        await self.update_donations_by_today()
+        await ctx.message.add_reaction('\u2705')
+
+    @commands.command()
+    async def myupd(self, ctx):
+        await self.my_upd(ctx.author.id)
+        await ctx.message.add_reaction('\u2705')
+
+        await ctx.send(
+            'Updated donations for your claimed accounts. '
+            'To see these type `myclaims`, and to find your donations type `mydon`'
+        )
+
+    @commands.command(name='manreset')
+    @checks.manage_server()
+    @checks.mod_commands()
+    async def manual_reset(self, ctx):
+        query = "UPDATE season SET toggle = $1"
+        await ctx.db.execute(query, False)
+
+        query = "SELECT tag FROM claims"
+        dump = await ctx.db.fetch(query)
+
+        await self.new_month()
+
+        for tag in dump:
+            print(dump, tag['tag'])
+            await self.download_starting_donations(tag['tag'])
+
+        await self.refresh_avg()
+        await ctx.message.add_reaction('\u2705')
+
     async def donations_by_today(self):
         query = "SELECT donationsbytoday FROM season WHERE toggle = $1"
         dump = await self.bot.pool.fetchrow(query, True)
@@ -153,57 +204,6 @@ class Update:
             await self.update_database(donations_this_season, donations_required_difference, clan, individual['tag'])
 
         await self.refresh_avg()
-
-    @commands.command()
-    # @checks.manage_server()
-    @checks.mod_commands()
-    async def update_required(self, ctx):
-        await self.update_donations_by_today()
-        await ctx.message.add_reaction('\u2705')
-
-    @commands.command(name='refavg')
-    # @checks.manage_server()
-    @checks.mod_commands()
-    async def _refresh_avg(self, ctx):
-        await self.refresh_avg()
-        await ctx.message.add_reaction('\u2705')
-
-    @commands.command(name='upd')
-    # @checks.manage_server()
-    @checks.mod_commands()
-    async def _update(self, ctx):
-        await self.update()
-        await self.update_donations_by_today()
-        await ctx.message.add_reaction('\u2705')
-
-    @commands.command()
-    async def myupd(self, ctx):
-        await self.my_upd(ctx.author.id)
-        await ctx.message.add_reaction('\u2705')
-
-        await ctx.send(
-            'Updated donations for your claimed accounts. '
-            'To see these type `myclaims`, and to find your donations type `mydon`'
-        )
-
-    @commands.command(name='manreset')
-    # @checks.manage_server()
-    @checks.mod_commands()
-    async def manual_reset(self, ctx):
-        query = "UPDATE season SET toggle = $1"
-        await ctx.db.execute(query, False)
-
-        query = "SELECT tag FROM claims"
-        dump = await ctx.db.fetch(query)
-
-        await self.new_month()
-
-        for tag in dump:
-            print(dump, tag['tag'])
-            await self.download_starting_donations(tag['tag'])
-
-        await self.refresh_avg()
-        await ctx.message.add_reaction('\u2705')
 
 
 def setup(bot):

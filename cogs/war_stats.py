@@ -2,7 +2,7 @@ from discord.ext import commands
 from cogs.utils import checks, paginator
 
 
-class War_Stats:
+class WarStats:
     def __init__(self, bot):
         self.bot = bot
 
@@ -14,14 +14,24 @@ class War_Stats:
             await ctx.send(error)
 
     @commands.command()
+    @checks.manage_server()
     @checks.mod_commands()
     async def statsdump(self, ctx):
+        """Updates stats in database for current finished war
+
+        You must have `manage_server` permissions to run this command.
+        """
         await self.calculateWarStats()
         await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
 
     @commands.command()
-    # @checks.restricted_channel(LEAGUE_BOT_CHANNEL)
+    @checks.restricted_channel(LEAGUE_BOT_CHANNEL)
     async def warstats(self, ctx, th: int = None):
+        """Gives you war stats for a max. of 20 wars
+
+        Optional: Specify the TH level of which to get stats. Else all THs will be added to a pagination session
+        This command can only be used in #league-bot
+        """
         all_ths = [9, 10, 11, 12]
 
         if not th:
@@ -244,4 +254,4 @@ class War_Stats:
 
 
 def setup(bot):
-    bot.add_cog(War_Stats(bot))
+    bot.add_cog(WarStats(bot))

@@ -1,13 +1,15 @@
 import discord
 from discord.ext import commands
-from asyncpg import exceptions as pgexceptions
+import asyncpg.exceptions as pgexceptions
+
 from cogs.utils import checks
 
-class War_Admin:
 
+class WarAdmin:
     def __init__(self, bot):
         self.bot = bot
         self.bot.IN_WAR_ROLE_ID = 526702907127627793
+        self.CLAN_TAG = '#P0LYJC8C'
 
     async def __error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
@@ -17,87 +19,6 @@ class War_Admin:
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(f'Missing required argument {error}!')
             await ctx.show_help()
-
-    async def get_ids(self, ctx):
-        '''Takes in the client and connection as arguement, returns 1 tuple of 2 lists (remove,add)'''
-
-        # try:
-
-        # Create a cursor & define AW tag
-        clanTag = '#P0LYJC8C'
-
-        # Query to get details for current war
-        currentWar = await self.bot.coc.clans(clanTag).currentwar().get(self.bot.coc_token)
-
-        # Get the list of tags
-        currentTags = [x['tag'] for x in currentWar['clan']['members']]
-
-        # Get a list of tags from last war
-        sql = 'select * from last_war'
-        dump = await ctx.db.fetch(sql)
-        lastTags = [x[0] for x in dump]
-
-        # Little bit memory waste T_T
-        # Create sets from lists (so finding difference is easy)
-        current = set(currentTags)
-        last = set(lastTags)
-
-        # people who were in last war but are not in current war
-        remove = tuple(last - current)
-
-        # people who are in current war but weren't in last
-        add = tuple(current - last)
-
-        # now that we have tags, we just need to query table tag_to_id to get corresponding Ids
-
-        # To remove
-        if remove:
-            sql = f'select ID from tag_to_id where Tag in {remove};'
-            dump = await ctx.db.execute(sql)
-            idsToRemove = [x[0] for x in dump]
-        else:
-            idsToRemove = []
-        # To add
-
-        if add:
-            sql = f'select ID from tag_to_id where Tag in {add};'
-            dump = await ctx.db.fetch(sql)
-            idsToAdd = [x[0] for x in dump]
-
-        else:
-            idsToAdd = []
-
-
-        #We find list of tags which are not present in our database, i.e unclaimed
-        sql = 'select Tag from tag_to_id'
-        dump = await ctx.db.fetch(sql)
-        tagsInDb = [x[0] for x in dump]
-
-        tagsInDb = set(tagsInDb)
-        unclaimedTags = list(current - tagsInDb)
-
-        #Get ign of people with unclaimed tags
-        unclaimed = [(x['name'],tag) for x in currentWar['clan']['members'] for tag in unclaimedTags if x['tag'] == tag]
-
-        #If there are any unclaimed accounts (We don't want to truncate the last war data)
-        if unclaimed:
-            pass
-        else:
-            # Update the table 'last_war' to hold new data
-            # first delete the current values in table
-            await ctx.db.execute('TRUNCATE last_war')
-
-            # Now insert the values
-            for tag in currentTags:
-                sql = f'''INSERT INTO last_war(Tag) VALUES('{tag}')'''
-                await ctx.db.execute(sql)
-
-        # In case anything breaks
-        # except Exception as error:
-        #     raise commands.CommandError(ctx.message.content, error)
-
-        # If nothing goes wrong return lists
-        return idsToRemove, idsToAdd, unclaimed
 
     @commands.group(name="warrole")
     @checks.mod_commands()
@@ -320,6 +241,83 @@ class War_Admin:
 
         await ctx.send(embed=e)
 
+    async def get_ids(self, ctx):
+        '''Takes in the client and connection as argument, returns 1 tuple of 2 lists (remove,add)'''
+
+        # Create a cursor & define AW tag
+
+        # Query to get details for current war
+        currentWar = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
+
+        # Get the list of tags
+        currentTags = [x['tag'] for x in currentWar['clan']['members']]
+
+        # Get a list of tags from last war
+        sql = 'select * from last_war'
+        dump = await ctx.db.fetch(sql)
+        lastTags = [x[0] for x in dump]
+
+        # Little bit memory waste T_T
+        # Create sets from lists (so finding difference is easy)
+        current = set(currentTags)
+        last = set(lastTags)
+
+        # people who were in last war but are not in current war
+        remove = tuple(last - current)
+
+        # people who are in current war but weren't in last
+        add = tuple(current - last)
+
+        # now that we have tags, we just need to query table tag_to_id to get corresponding Ids
+
+        # To remove
+        if remove:
+            sql = f'select ID from tag_to_id where Tag in {remove};'
+            dump = await ctx.db.execute(sql)
+            idsToRemove = [x[0] for x in dump]
+        else:
+            idsToRemove = []
+        # To add
+
+        if add:
+            sql = f'select ID from tag_to_id where Tag in {add};'
+            dump = await ctx.db.fetch(sql)
+            idsToAdd = [x[0] for x in dump]
+
+        else:
+            idsToAdd = []
+
+        # We find list of tags which are not present in our database, i.e unclaimed
+        sql = 'select Tag from tag_to_id'
+        dump = await ctx.db.fetch(sql)
+        tagsInDb = [x[0] for x in dump]
+
+        tagsInDb = set(tagsInDb)
+        unclaimedTags = list(current - tagsInDb)
+
+        # Get ign of people with unclaimed tags
+        unclaimed = [(x['name'], tag) for x in currentWar['clan']['members'] for tag in unclaimedTags if x['tag'] == tag]
+
+        # If there are any unclaimed accounts (We don't want to truncate the last war data)
+        if unclaimed:
+            pass
+        else:
+            # Update the table 'last_war' to hold new data
+            # first delete the current values in table
+            await ctx.db.execute('TRUNCATE last_war')
+
+            # Now insert the values
+            for tag in currentTags:
+                sql = f'''INSERT INTO last_war(Tag) VALUES('{tag}')'''
+                await ctx.db.execute(sql)
+
+        # In case anything breaks
+        # except Exception as error:
+        #     raise commands.CommandError(ctx.message.content, error)
+
+        # If nothing goes wrong return lists
+        return idsToRemove, idsToAdd, unclaimed
+
 
 def setup(bot):
-    bot.add_cog(War_Admin(bot))
+    bot.add_cog(WarAdmin(bot))

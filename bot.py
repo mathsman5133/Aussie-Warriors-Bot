@@ -78,6 +78,8 @@ class AWBot(commands.Bot):
             341026885985239051
         ]
 
+        self.loaded_extensions = initial_extensions  # for our reload_all command
+
     async def on_message(self, message):
         if message.author.bot:
             return  # ignore bot messages
