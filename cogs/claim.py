@@ -1,9 +1,9 @@
 import discord
 from discord.ext import commands
-from cogs.utils import db
-from cogs.utils import paginator
-from asyncpg import exceptions as pgexceptions
-from cogs.utils import checks
+
+import asyncpg.exceptions as pgexceptions
+
+from cogs.utils import checks, db, paginator
 
 
 class Claims(db.Table):
@@ -40,6 +40,14 @@ class Claim:
 
     @commands.command()
     async def claim(self, ctx, player_tag, mention: discord.Member = None):
+        """Claim an account by player tag or IGN
+        Parameters: [player tag or IGN], [optional: mention, id, user#discrim]
+        Eg. `?claim #HGD345G` or `?claim raptor217 @mathsman`
+
+        Please note that the IGN must be in either AW or A4W,
+        and if it is a multiword name must be surrounded by quotation marks (ie. "maths man")
+        """
+
         if not mention:
             mention = ctx.author
 
@@ -118,7 +126,9 @@ class Claim:
 
     @commands.command(aliases=['del'])
     async def delete_claim(self, ctx, *, tag_or_ign):
-
+        """Delete an account from the database
+        Parameters: [player tag or ign]
+        """
         if tag_or_ign.startswith('#'):
             query = 'SELECT * FROM claims WHERE tag = $1'
             dump = await ctx.db.fetch(query, tag_or_ign)
@@ -147,6 +157,13 @@ class Claim:
     @commands.command()
     @checks.mod_commands()
     async def exempt(self, ctx, tag_or_ign: str, true_false: bool):
+        """Exempts an account from the donation tracker
+
+        Parameters: [tag or ign] [true | false: whether to exempt or not]
+        Eg. `?exempt #12GJS34F True` or `?exempt Mathsman false`
+
+        Please not that if it is a multi-word IGN you must surround it in quotation marks (eg. "maths man")
+        """
         if tag_or_ign.startswith('#'):
 
             query = 'SELECT * FROM claims WHERE tag = $1'
@@ -170,6 +187,8 @@ class Claim:
 
     @commands.command()
     async def exemptlist(self, ctx):
+        """Lists all members on the exempt list
+        """
         query = 'SElECT ign, tag, userid FROM claims WHERE exempt = $1'
         dump = await ctx.db.fetch(query, True)
 
@@ -185,6 +204,9 @@ class Claim:
 
     @commands.command(aliases=['gc'])
     async def get_claims(self, ctx, mention: discord.Member=None):
+        """Gets all claims for a member or yourself
+        Parameters: [mention: userid, ping, user#discrim]
+        """
         if not mention:
             mention = ctx.author
 
@@ -202,6 +224,8 @@ class Claim:
 
     @commands.command(aliases=['awgm'])
     async def aw_get_members(self, ctx):
+        """Returns a pagination of all accounts, claimed and not, for AW
+        """
         clan_members = await self.bot.coc.clans('#P0LYJC8C').members.get(self.bot.coc_token)
 
         query = "SELECT ign, tag, userid FROM claims WHERE clan = $1"
@@ -224,9 +248,6 @@ class Claim:
 
         entries = ['__**Claimed Bases**__']
 
-        # entries.extend(f'{ign} ({tag}): <@{userid}>'
-        #                for (index, (ign, tag, userid)) in enumerate(dump) or 'No Members')
-
         for user in unique_ids:
             #  make string of accounts in format ign (tag): donation\n ...more accounts
             string = '\n'.join(f'   {n[0]} ({n[1]})' for n in dump if n[2] == user)
@@ -242,6 +263,8 @@ class Claim:
 
     @commands.command(aliases=['a4wgm'])
     async def a4w_get_members(self, ctx):
+        """Returns a pagination of all accounts, claimed and not, for A4W
+        """
         clan_members = await self.bot.coc.clans('#808URP9P').members.get(self.bot.coc_token)
 
         query = "SELECT tag, ign, userid FROM claims WHERE clan = $1"

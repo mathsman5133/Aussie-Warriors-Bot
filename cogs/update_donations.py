@@ -1,8 +1,9 @@
-from discord.ext import commands
 import datetime
-from cogs.utils import db
+
 import discord
-from cogs.utils import checks
+from discord.ext import commands
+
+from cogs.utils import checks, db
 
 
 class Season(db.Table):
@@ -38,6 +39,8 @@ class Update:
     @checks.manage_server()
     @checks.mod_commands()
     async def update_required(self, ctx):
+        """Manually update the required donations by today
+        """
         await self.update_donations_by_today()
         await ctx.message.add_reaction('\u2705')
 
@@ -45,6 +48,10 @@ class Update:
     @checks.manage_server()
     @checks.mod_commands()
     async def _refresh_avg(self, ctx):
+        """Manually refresh the averages of all accounts in the database
+
+        [Requires `manage_server` permissions]
+        """
         await self.refresh_avg()
         await ctx.message.add_reaction('\u2705')
 
@@ -52,12 +59,19 @@ class Update:
     @checks.manage_server()
     @checks.mod_commands()
     async def _update(self, ctx):
+        """Manually update the donations of all accounts in the database
+
+        [Requires `manage_server` permissions]
+        """
         await self.update()
         await self.update_donations_by_today()
         await ctx.message.add_reaction('\u2705')
 
     @commands.command()
     async def myupd(self, ctx):
+        """Manually updates the donations of your accounts in the database.
+        This is the preferred method if you wish to update your accounts; all accounts will update daily
+        """
         await self.my_upd(ctx.author.id)
         await ctx.message.add_reaction('\u2705')
 
@@ -70,6 +84,8 @@ class Update:
     @checks.manage_server()
     @checks.mod_commands()
     async def manual_reset(self, ctx):
+        """Manually resets the season of donations in the database
+        """
         query = "UPDATE season SET toggle = $1"
         await ctx.db.execute(query, False)
 

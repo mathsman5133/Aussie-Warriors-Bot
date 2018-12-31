@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
-import cogs.utils.paginator as paginator
-from cogs.utils import checks
+
+from cogs.utils import checks, paginator
 
 
 class ShowDonations:
@@ -25,6 +25,11 @@ class ShowDonations:
 
     @commands.command(aliases=['mydon'])
     async def don(self, ctx, mention: discord.Member=None):
+        """Finds donations for yourself or a friend
+        Parameters: [user: mention, id, user#discrim]
+        Eg. `?don` or `?don @mathsman`
+        """
+
         if not mention:
             mention = ctx.author
 
@@ -43,6 +48,8 @@ class ShowDonations:
 
     @commands.command()
     async def awdon(self, ctx):
+        """Returns a pagination of donations for all members in AW
+        """
         query = "SELECT userid, ign, tag, difference FROM claims WHERE clan = $1 ORDER BY userid ASC;"
         dump = await ctx.db.fetch(query, 'Aussie Warriors')
 
@@ -62,6 +69,9 @@ class ShowDonations:
 
     @commands.command()
     async def a4wdon(self, ctx):
+        """Returns a pagination of donations for all members in AW
+        """
+
         query = "SELECT userid, ign, tag, difference FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussies 4 War')
 
@@ -81,6 +91,9 @@ class ShowDonations:
 
     @commands.command()
     async def avg(self, ctx, mention: discord.Member=None):
+        """Returns the average donations of you or a friend
+        Parameters: [user: mention, id or user#discrim]
+        """
         if mention:
             query = "SELECT userid, average FROM averages WHERE userid = $1"
             dump = await ctx.db.fetchrow(query, mention.id)
@@ -100,12 +113,16 @@ class ShowDonations:
 
     @commands.command(name='myavg')
     async def myavg(self, ctx):
+        """Gets average donations for you
+        """
         await ctx.invoke(self.avg, ctx.author)
 
     @commands.command()
     @checks.manage_server()
     @checks.mod_commands()
     async def send_pings(self, ctx):
+        """Manually sends donation warning pings
+        """
         await self.send_donation_pings()
         await ctx.message.delete()
 
