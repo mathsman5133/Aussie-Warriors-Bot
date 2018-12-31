@@ -1,5 +1,14 @@
 from discord.ext import commands
-from cogs.utils import checks, paginator
+from cogs.utils import checks, paginator, db
+
+
+class war_stats(db.Table()):
+    war_no = db.Column(db.Integer())
+    name = db.Column(db.String())
+    tag = db.Column(db.String())
+    th = db.Column(db.Integer())
+    hitrate = db.Column(db.String())
+    defenserate = db.Column(db.String())
 
 
 class WarStats:

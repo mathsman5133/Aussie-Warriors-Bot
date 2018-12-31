@@ -11,6 +11,7 @@ from discord.ext import commands
 from cogs.utils import checks
 from cogs.utils.help import HelpPaginator
 
+
 class TabularData:
     def __init__(self):
         self._widths = []
