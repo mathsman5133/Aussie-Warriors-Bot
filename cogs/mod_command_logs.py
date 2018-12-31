@@ -7,7 +7,7 @@ import traceback
 class CommandLogging:
     def __init__(self, bot):
         self.bot = bot
-        self.bot.info_channel_id = 438572045077446657
+        self.bot.info_channel_id = 527373033568993282
         self.bot.mod_commands = []
 
     async def on_command(self, ctx):
@@ -15,7 +15,9 @@ class CommandLogging:
 
     async def on_command_completion(self, ctx):
         if ctx not in self.bot.mod_commands:
-            return
+            return  # if its not a command decorated with @checks.mod_commands()
+        if ctx.command.name == 'help':
+            return  # for some reason help command gets past too so lets deal with that now
 
         time_taken = datetime.datetime.utcnow() - ctx.start_time
         time_taken_readable = (f'{time_taken.microseconds/1000000} sec'
