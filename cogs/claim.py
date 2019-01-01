@@ -346,15 +346,17 @@ class Claim:
         return dump[0]
 
     async def update_ign(self, tag):
-        cocname = (await self.bot.coc.players(tag).get(self.bot.coc_token))['name']
-        if not cocname:
+        coc = (await self.bot.coc.players(tag).get(self.bot.coc_token))
+        if not coc:
             return False
 
+        ign = coc['name']
+
         query = 'UPDATE claims SET ign = $1 WHERE tag = $2'
-        await self.bot.pool.execute(query, cocname, tag)
+        await self.bot.pool.execute(query, ign, tag)
 
         query = 'UPDATE war_stats SET name = $1 WHERE tag = $2'
-        await self.bot.pool.execute(query, cocname, tag)
+        await self.bot.pool.execute(query, ign, tag)
 
         return True
 
