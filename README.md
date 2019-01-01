@@ -24,7 +24,7 @@ CREATE DATABASE awbot OWNER awbot;
 
 4. **Creating a creds file**
 You will need to create a `creds.json` file in the main directory, containing the following:
-```json
+```py
 {
   "coctoken": "" # your Clash of Clans API token from https://developer.clashofclans.com/
   "bottoken": "" # your discord bot's token from https://discordapp.com/developers/applications/
