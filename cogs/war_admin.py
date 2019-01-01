@@ -225,7 +225,7 @@ class WarAdmin:
 
         sql = f'select ID from tag_to_id where Tag in {tags};'
 
-        dump = await ctx.db.fetch(sql)
+        dump = set(await ctx.db.fetch(sql))
 
         with_db_role = [n[0] for n in dump]
         with_discord_role = [n.id for n in ctx.guild.get_role(self.bot.IN_WAR_ROLE_ID).members]
