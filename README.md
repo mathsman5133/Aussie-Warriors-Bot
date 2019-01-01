@@ -34,7 +34,7 @@ You will need to create a `creds.json` file in the main directory, containing th
 
 5. **Creating tables and setup of the database**
 
-Go into the `cogs.utils` directory and run `database_setup.py` by doing `python3.6 database_setup.py db init`
+In the main directory, run the script to setup the database by doing: `python3.6 database_setup.py db init`
 
 6. **Run the bot**
 
