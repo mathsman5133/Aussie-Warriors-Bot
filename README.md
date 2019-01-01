@@ -3,7 +3,7 @@
 
 ## Running
 
-Many of the commands and features of this bot have been hardcoded to work with both the Aussie Warriors server and the clash of clans clan. 
+Many of the commands and features of this bot have been hardcoded to work with both the Aussie Warriors server and the corresponding clash of clans clan. 
 
 However, if you wish to run an instance of this bot the installation steps are as follows:
 
