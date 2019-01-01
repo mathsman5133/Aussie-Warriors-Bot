@@ -3,7 +3,7 @@
 
 ## Running
 
-Many of the commands and features of this bot have been hardcoded to work with both the Aussie Warriors server and the clash of clans clan. 
+Many of the commands and features of this bot have been hardcoded to work with both the Aussie Warriors server and the corresponding clash of clans clan. 
 
 However, if you wish to run an instance of this bot the installation steps are as follows:
 
@@ -34,7 +34,7 @@ You will need to create a `creds.json` file in the main directory, containing th
 
 5. **Creating tables and setup of the database**
 
-Go into the `cogs.utils` directory and run `database_setup.py` by doing `python3.6 database_setup.py db init`
+In the main directory, run the script to setup the database by doing: `python3.6 database_setup.py db init`
 
 6. **Run the bot**
 
