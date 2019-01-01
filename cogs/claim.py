@@ -32,12 +32,6 @@ class Claim:
             await ctx.send(f'Missing required argument {error}!')
             await ctx.show_help()
 
-    async def donations_by_today(self):
-        query = "SELECT donationsbytoday FROM season WHERE toggle = $1"
-        dump = await self.bot.pool.fetchrow(query, True)
-
-        return dump[0]
-
     @commands.command()
     async def claim(self, ctx, player_tag, mention: discord.Member = None):
         """Claim an account by player tag or IGN
@@ -153,6 +147,40 @@ class Claim:
             await ctx.db.execute(query, dump[2][0])
 
         await ctx.message.add_reaction('\u2705')
+
+    @commands.group()
+    async def updign(self, ctx, tag: str):
+        """Update IGN of the tag supplied in DB
+
+        Parameters: [player tag]
+        """
+        fctn = await self.update_ign(tag)  # if tag not found in cocapi it will return false
+
+        if not fctn:
+            raise commands.BadArgument('Tag not found in clash of clans API')
+
+        await ctx.message.add_reaction('\u2705')  # green tick --> success
+
+    @updign.command(name='all')
+    @checks.manage_server()
+    @checks.mod_commands()
+    async def updign_all(self, ctx):
+        """Update IGN of all accounts in database.
+
+        [Requires `manage_server` permissions]
+
+        Please use `updign` if possible; it is faster and easier.
+        """
+
+        query = 'SELECT tag FROM claims'
+        dump = await ctx.db.fetch(query)
+
+        tags = [x[0] for x in dump]  # get a list of tags from dump
+
+        for tag in tags:
+            await self.update_ign(tag)  # update ign for all tags in db
+
+        await ctx.message.add_reaction('\u2705')  # green tick --> success
 
     @commands.command()
     @checks.mod_commands()
@@ -309,6 +337,25 @@ class Claim:
 
         pages = paginator.EmbedPag(ctx, entries=entries, per_page=12, message=ctx.message)
         await pages.paginate(start_page=1)
+
+    async def donations_by_today(self):
+        query = "SELECT donationsbytoday FROM season WHERE toggle = $1"
+        dump = await self.bot.pool.fetchrow(query, True)
+
+        return dump[0]
+
+    async def update_ign(self, tag):
+        cocname = (await self.bot.coc.players(tag).get(self.bot.coc_token))['name']
+        if not cocname:
+            return False
+
+        query = 'UPDATE claims SET ign = $1 WHERE tag = $2'
+        await self.bot.pool.execute(query, cocname, tag)
+
+        query = 'UPDATE war_stats SET name = $1 WHERE tag = $2'
+        await self.bot.pool.execute(query, cocname, tag)
+
+        return True
 
 
 def setup(bot):
