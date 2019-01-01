@@ -1,15 +1,16 @@
-import io
-import textwrap
-import traceback
-import datetime
-
 from contextlib import redirect_stdout
+from collections import Counter
 
-import discord
 from discord.ext import commands
 
 from cogs.utils import checks
 from cogs.utils.help import HelpPaginator
+
+import io
+import textwrap
+import traceback
+import datetime
+import discord
 
 
 class TabularData:
@@ -475,5 +476,8 @@ class Admin:
 
 
 def setup(bot):
+    if not hasattr(bot, 'socket_stats'):
+        bot.socket_stats = Counter()
+
     bot.add_cog(Admin(bot))
 

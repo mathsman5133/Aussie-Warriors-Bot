@@ -1,9 +1,9 @@
-import discord
 from discord.ext import commands
 
-import asyncpg.exceptions as pgexceptions
-
 from cogs.utils import checks, db, paginator
+
+import discord
+import asyncpg.exceptions as pgexceptions
 
 
 class Claims(db.Table):
@@ -28,6 +28,7 @@ class Claim:
             e = discord.Embed(colour=discord.Colour.red())
             e.description = error
             await ctx.send(embed=e)
+
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(f'Missing required argument {error}!')
             await ctx.show_help()
