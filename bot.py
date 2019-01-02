@@ -67,6 +67,13 @@ class AWBot(commands.Bot):
                                                    family=socket.AF_INET))
 
         self.coc_token = self.loaded['coctoken']
+        if 'updateStats' in self.loaded.keys():
+            self.update_stats = self.loaded['updateStats']
+        else:
+            self.loaded['updateStats'] = 'false'
+            self.save_json()
+            print('No updateStats value found. I have set it to default false')
+
         self.coc = ClashOfClans(connection=self.http_session, bot=self)
 
         # github repo object based on main directory we're in. used for `git pull` commands
@@ -112,6 +119,8 @@ class AWBot(commands.Bot):
 
         thing = functools.partial(save_to_json)
         await self.loop.run_in_executor(None, thing)
+        self.coc_token = self.loaded['coctoken']
+        self.update_stats = self.loaded['updateStats']
 
     async def update_coc_token(self, new_token):
         """Update the coc api token in the creds json file
