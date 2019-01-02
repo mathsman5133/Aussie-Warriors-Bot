@@ -1,6 +1,9 @@
 from discord.ext import commands
 from cogs.utils import checks, paginator, db
 
+import asyncio
+import discord
+
 
 class war_stats(db.Table):
     war_no = db.Column(db.Integer())
@@ -14,6 +17,7 @@ class war_stats(db.Table):
 class WarStats:
     def __init__(self, bot):
         self.bot = bot
+        self._task = bot.loop.create_task(self.warStatsAutoUpdater())
 
     LEAGUE_BOT_CHANNEL = 528822099360612352
     CLAN_TAG = '#P0LYJC8C'
@@ -196,8 +200,8 @@ class WarStats:
         # cursor.close()
         # connection.commit()
 
-        # Finally Set updateStats = 'false', since this war's stats have been added
-        self.updateStats = 'false'
+        # # Finally Set updateStats = 'false', since this war's stats have been added
+        # self.bot.update_stats = 'false'
         # Save value in file
         self.bot.loaded['updateStats'] = 'false'
         await self.bot.save_json()
@@ -262,9 +266,9 @@ class WarStats:
             overall = {'name': name, 'hitrate': hitrate, 'hitratePer': hitratePer,
                        'defenserate': defenserate, 'defenseratePer': defenseratePer, 'tag': tag}
             overall_stats.append(overall)
-            offense = {'name':name,'hitrate':hitrate,'hitratePer':hitratePer, 'tag': tag}
+            offense = {'name': name, 'hitrate': hitrate, 'hitratePer': hitratePer, 'tag': tag}
             offensiveStats.append(offense)
-            defense = {'name':name,'defenserate':defenserate,'defenseratePer':defenseratePer, 'tag': tag}
+            defense = {'name': name, 'defenserate': defenserate, 'defenseratePer': defenseratePer, 'tag': tag}
             defensiveStats.append(defense)
 
         stats = {'offense': offensiveStats, 'defense': defensiveStats, 'overall': overall_stats}
@@ -284,21 +288,36 @@ class WarStats:
 
             # Check if state exists in current war, (This is a check in case of maintainence)
             if 'state' in currentWar.keys():
-                # Check if we have to update stats && the war has ended (We can't check for just warEnded because, it will keep updating for same war till the status changes)
-                if self.updateStats == 'true':
-                    if currentWar['state'] == warEnded:
+                # Check if we have to update stats && the war has ended
+                # (We can't check for just warEnded because, it will keep updating
+                # for same war till the status changes)
+                if self.bot.update_stats == 'true':
+                    if currentWar['state'] == 'warEnded':
                         await self.calculateWarStats()
                         continue
-                # In case updateStats is 'false' (i.e last war ended and it's stats were updated, so we need to check for next war, once we get a match, we make updateStats 'true')
+                # In case updateStats is 'false' (i.e last war ended and it's stats were updated,
+                #  so we need to check for next war, once we get a match, we make updateStats 'true')
                 elif currentWar['state'] == 'preparation' or currentWar['state'] == 'inWar':
-                    self.updateStats = 'true'
+                    self.bot.update_stats = 'true'
                     # Write the value of updateStats in file
                     self.bot.loaded['updateStats'] = 'true'
                     await self.bot.save_json()
                     continue
             else:
+                e = discord.Embed(colour=discord.Colour.red())
                 # You might want to log the error
-                pass
+                if 'reason' in currentWar.keys():
+                    e.add_field(name="Clash of Clans API Error",
+                                value=f"Reason: {currentWar['reason']}\nMessage: {currentWar['message']}")
+                elif not currentWar:
+                    e.add_field(name="Clash of Clans API Error",
+                                value="The request returned `None`\nIs it an incorrect token?")
+                else:
+                    e.add_field(name="Clash of Clans API Error",
+                                value="Unknown Error")
+
+                await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
+
 
 def setup(bot):
     bot.add_cog(WarStats(bot))
