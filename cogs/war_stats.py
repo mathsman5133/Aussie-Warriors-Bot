@@ -57,6 +57,9 @@ class WarStats:
             base = '{:>7}{:>10}{:>14}{:>10}{:>7}{:>14}'
 
             strings = []
+            if not stats:
+                strings.append('No Stats Found. Sorry')
+
             for member in stats['overall']:
                 strings.append(base.format(member['hitrate'], member['hitratePer'], member['name'],
                                            member['defenserate'], member['defenseratePer'], member['tag']))
