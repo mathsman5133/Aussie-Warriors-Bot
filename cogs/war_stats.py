@@ -58,7 +58,7 @@ class WarStats:
 
             strings = []
             if not stats['overall']:
-                entries.append(f'No stats found for TH{n}v{n}. Sorry')
+                entries.append(f'No stats found for TH{n}v{n}. Sorry\n```')
                 continue
 
             for member in stats['overall']:
