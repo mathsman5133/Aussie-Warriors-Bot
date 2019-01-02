@@ -146,6 +146,8 @@ class MsgPag:
     def react_check(self, reaction, user):
         if (user is None) or (user.id != self.author.id):
             return False
+        if reaction.message != self.ctx.message:
+            return False
         for (emoji, func) in self.reaction_emojis:
             if reaction.emoji == emoji:
                 self.match = func
@@ -321,6 +323,9 @@ class EmbedPag:
     def react_check(self, reaction, user):
         if (user is None) or (user.id != self.author.id):
             return False
+        if reaction.message != self.ctx.message:
+            return False
+
         for (emoji, func) in self.reaction_emojis:
             if reaction.emoji == emoji:
                 self.match = func
