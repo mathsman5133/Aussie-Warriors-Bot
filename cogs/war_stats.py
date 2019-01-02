@@ -196,6 +196,12 @@ class WarStats:
         # cursor.close()
         # connection.commit()
 
+        # Finally Set updateStats = 'false', since this war's stats have been added
+        self.updateStats = 'false'
+        # Save value in file
+        self.bot.loaded['updateStats'] = 'false'
+        await self.bot.save_json()
+
     async def statsForTh(self, townhallLevel):
         '''Takes in townhall as arguement and gives the stats for that particular townhall level'''
 
@@ -265,6 +271,34 @@ class WarStats:
 
         return stats
 
+    async def warStatsAutoUpdater(self):
+
+        # Infinite loop
+        while True:
+
+            # Sleep for 2 mins before querying the API
+            await asyncio.sleep(120)
+
+            # Query to get details for current war
+            currentWar = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
+
+            # Check if state exists in current war, (This is a check in case of maintainence)
+            if 'state' in currentWar.keys():
+                # Check if we have to update stats && the war has ended (We can't check for just warEnded because, it will keep updating for same war till the status changes)
+                if self.updateStats == 'true':
+                    if currentWar['state'] == warEnded:
+                        await self.calculateWarStats()
+                        continue
+                # In case updateStats is 'false' (i.e last war ended and it's stats were updated, so we need to check for next war, once we get a match, we make updateStats 'true')
+                elif currentWar['state'] == 'preparation' or currentWar['state'] == 'inWar':
+                    self.updateStats = 'true'
+                    # Write the value of updateStats in file
+                    self.bot.loaded['updateStats'] = 'true'
+                    await self.bot.save_json()
+                    continue
+            else:
+                # You might want to log the error
+                pass
 
 def setup(bot):
     bot.add_cog(WarStats(bot))
