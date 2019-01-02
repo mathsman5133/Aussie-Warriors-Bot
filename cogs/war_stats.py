@@ -58,7 +58,8 @@ class WarStats:
 
             strings = []
             if not stats['overall']:
-                strings.append('No Stats Found. Sorry')
+                entries.append(f'No stats found for TH{n}v{n}. Sorry')
+                continue
 
             for member in stats['overall']:
                 strings.append(base.format(member['hitrate'], member['hitratePer'], member['name'],
