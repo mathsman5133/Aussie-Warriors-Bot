@@ -57,7 +57,7 @@ class WarStats:
             base = '{:>7}{:>10}{:>14}{:>10}{:>7}{:>14}'
 
             strings = []
-            if not stats:
+            if not stats['overall']:
                 strings.append('No Stats Found. Sorry')
 
             for member in stats['overall']:
