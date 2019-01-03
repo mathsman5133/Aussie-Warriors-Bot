@@ -21,7 +21,7 @@ class WarStats:
         self._task = bot.loop.create_task(self.warStatsAutoUpdater())
 
     LEAGUE_BOT_CHANNEL = 528822099360612352
-    CLAN_TAG = '#P0LYJC8C'
+    CLAN_TAG = '#808URP9P'
 
     async def __error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
@@ -277,10 +277,12 @@ class WarStats:
         return stats
 
     async def warStatsAutoUpdater(self):
+        await (self.bot.get_channel(self.bot.info_channel_id)).send('loop started')
 
         # Infinite loop
         while True:
             # Sleep for 2 mins before querying the API
+
             await asyncio.sleep(120)
 
             # Query to get details for current war
@@ -292,12 +294,16 @@ class WarStats:
                 # (We can't check for just warEnded because, it will keep updating
                 # for same war till the status changes)
                 if self.bot.update_stats == 'true':
+                    await (self.bot.get_channel(self.bot.info_channel_id)).send('updateStats true')
+
                     if currentWar['state'] == 'warEnded':
-                        await self.calculateWarStats()
+                        await (self.bot.get_channel(self.bot.info_channel_id)).send('war has ended')
+                        # await self.calculateWarStats()
                         continue
                 # In case updateStats is 'false' (i.e last war ended and it's stats were updated,
                 #  so we need to check for next war, once we get a match, we make updateStats 'true')
-                elif currentWar['state'] == 'preparation' or currentWar['state'] == 'inWar':
+                elif currentWar['state'] in ['preparation', 'inWar']:
+                    await (self.bot.get_channel(self.bot.info_channel_id)).send('updatestats is false, inwar')
                     self.bot.update_stats = 'true'
                     # Write the value of updateStats in file
                     self.bot.loaded['updateStats'] = 'true'
