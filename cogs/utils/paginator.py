@@ -9,13 +9,13 @@ class CannotPaginate(Exception):
 class MsgPag:
     'Implements a paginator that queries the user for the\n    pagination interface.\n    Pages are 1-index based, not 0-index based.\n    If the user does not reply within 2 minutes, the pagination\n    interface exits automatically.\n    '
 
-    def __init__(self, ctx, *, message, entries, per_page):
+    def __init__(self, ctx, *, entries, per_page):
         self.ctx = ctx
         self.bot = ctx.bot
         self.channel = ctx.channel
         self.entries = entries
         self.message = ctx.message
-        self.author = message.author
+        self.author = ctx.author
         self.per_page = per_page
         (pages, left_over) = divmod(len(self.entries), self.per_page)
         if left_over:
@@ -26,13 +26,12 @@ class MsgPag:
         self.reaction_emojis = [('⏮', self.first_page), ('◀', self.previous_page), ('▶', self.next_page),
                                 ('⏭', self.last_page), ('🔢', self.numbered_page), ('⏹', self.stop_pages),
                                 ('ℹ', self.show_help)]
-        print(self.message)
-        guild = self.message.guild
+        guild = ctx.guild
         if guild is not None:
-            self.permissions = self.message.channel.permissions_for(guild.me)
+            self.permissions = ctx.channel.permissions_for(guild.me)
         else:
-            self.permissions = self.message.channel.permissions_for(self.bot.user)
-        if (not self.permissions.embed_links):
+            self.permissions = ctx.channel.permissions_for(self.bot.user)
+        if not self.permissions.embed_links:
             raise CannotPaginate('Bot does not have embed links permission.')
 
     def get_page(self, page):
@@ -42,26 +41,24 @@ class MsgPag:
     async def show_page(self, page, *, first=False):
         self.current_page = page
         entries = self.get_page(page)
-        p = ''
-        for t in entries:
-            p += t
-        print(p)
-        self.embed.set_footer(text='Page %s/%s (%s entries)' % (page, self.maximum_pages, len(self.entries)))
-        if (not self.paginating):
-            self.embed.description = '\n'.join(p)
-            return await self.message.channel.send(content=p + '```')
-        if (not first):
-            self.embed.description = '\n'.join(p)
-            await self.message.edit(content=p + '\nPage %s/%s (%s entries)```'%(page, self.maximum_pages, len(self.entries)))
-            return
-        if (not self.permissions.add_reactions):
+        p = ''.join(entries)
+
+        if not self.paginating:
+            return await self.message.channel.send(f"{p}")
+        if not first:
+            return await self.message.edit(
+                content=f"{p}\n```Page {page}/{self.maximum_pages} ({len(self.entries)} entries)```")
+
+        if not self.permissions.add_reactions:
             raise CannotPaginate('Bot does not have add reactions permission.')
-        if (not self.permissions.read_message_history):
+        if not self.permissions.read_message_history:
             raise CannotPaginate('Bot does not have Read Message History permission.')
-        #p.append('```')
-        p += ('\nPage %s/%s (%s entries) ```\nConfused? React with ℹ for more info.'%(page, self.maximum_pages, len(self.entries)))
-        self.embed.description = '\n'.join(p)
-        self.message = await self.ctx.send(content=p)
+
+        p += (f'\n```Page {page}/{self.maximum_pages} ({len(self.entries)} entries) ```'
+              f'\nConfused? React with ℹ for more info.')
+
+        self.message = await self.ctx.send(p)
+
         for (reaction, _) in self.reaction_emojis:
             if (self.maximum_pages == 2) and (reaction in ('⏭', '⏮')):
                 continue
@@ -75,21 +72,23 @@ class MsgPag:
             await self.show_page(page)
 
     async def first_page(self):
-        'goes to the first page'
+        """Goes to the first page.
+        """
         await self.show_page(1)
 
     async def last_page(self):
-        'goes to the last page'
+        """Goes to the last page.
+        """
         await self.show_page(self.maximum_pages)
 
     async def next_page(self):
-        'goes to the next page'
+        """Goes to the next page.
+        """
         await self.checked_show_page(self.current_page + 1)
 
-# no |<< or >>| buttons if we only have two pages
-
-    async def previous_page(self):  # we can't forbid it if someone ends up using it but remove
-        'goes to the previous page'  # it from the default set
+    async def previous_page(self):
+        """Goes to the previous page.
+        """
         await self.checked_show_page(self.current_page - 1)
 
     async def show_current_page(self):
@@ -97,9 +96,11 @@ class MsgPag:
             await self.show_page(self.current_page)  # If the message isn't found, we don't care about clearing anything
 
     async def numbered_page(self):
-        'lets you type a page number to go to'
-        to_delete = []
+        """"Lets you type a page number to go to.
+        """
+        to_delete = list()
         to_delete.append(await self.message.channel.send('What page do you want to go to?'))
+
         msg = await self.bot.wait_for('message', check=(lambda m: m.content.isdigit()), timeout=30.0)
         if msg is not None:
             page = int(msg.content)
@@ -107,27 +108,31 @@ class MsgPag:
             if (page != 0) and (page <= self.maximum_pages):
                 await self.show_page(page)
             else:
-                to_delete.append(await self.ctx.send('Invalid page given. (%s/%s)' % (page, self.maximum_pages)))
+                to_delete.append(await self.ctx.send(f'Invalid page given. ({page}/{self.maximum_pages})'))
                 await asyncio.sleep(5)
+
         else:
             to_delete.append(await self.message.channel.send('Took too long.'))
             await asyncio.sleep(5)
+
         try:
             await self.channel.delete_messages(to_delete)
-        except Exception:
+        except:
             pass
 
     async def show_help(self):
-        'shows this message'
+        """Shows this message
+        """
         e = discord.Embed()
-        messages = ['Welcome to the interactive paginator!\n']
+        messages = list('Welcome to the interactive paginator!\n')
         messages.append(
             'This interactively allows you to see pages of text by navigating with reactions. They are as follows:\n')
         for (emoji, func) in self.reaction_emojis:
-            messages.append('%s %s' % (emoji, func.__doc__))
+            messages.append(f'{emoji} {func.__doc__}')
+
         e.description = '\n'.join(messages)
-        e.colour = 7572439
-        e.set_footer(text='We were on page %s before this message.' % self.current_page)
+        e.colour = discord.Colour.blue()  # blue --> informative
+        e.set_footer(text=f'We were on page {self.current_page} before this message.')
         await self.message.edit(embed=e)
 
         async def go_back_to_current_page():
@@ -137,7 +142,8 @@ class MsgPag:
         self.bot.loop.create_task(go_back_to_current_page())
 
     async def stop_pages(self):
-        'Moves to next group of pages: offence, defence, or a new war/player'
+        """Stops the pagination session
+        """
         await self.message.delete()
         if self.to_del:
             await self.channel.delete_messages(self.to_del)
@@ -228,6 +234,7 @@ class EmbedPag:
             self.embed.description = '\n'.join(p)
             self.embed.set_footer(text="Type `don` to find total donations of your accounts")
             return await self.message.channel.send(embed=self.embed)
+
         if (not first):
             self.embed.description = '\n'.join(p)
             await self.message.edit(embed=self.embed)
@@ -320,7 +327,10 @@ class EmbedPag:
         self.paginating = False
 
     def react_check(self, reaction, user):
-        if (user is None) or (user.id != self.author.id):
+        if user is None or user.id != self.author.id:
+            return False
+
+        if reaction.message.id != self.message.id:
             return False
 
         for (emoji, func) in self.reaction_emojis:

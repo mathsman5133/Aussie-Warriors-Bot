@@ -59,11 +59,11 @@ class WarStats:
 
         for n in th:
             stats = await self.statsForTh(n)
-            base = '{:>7}{:>10}{:>14}{:>10}{:>7}{:>14}'
+            base = '{:>7}{:>10}{:>16}{:>10}{:>7}{:>14}'
 
             strings = []
             if not stats['overall']:
-                entries.append(f'__**No stats found for TH{n}v{n}. Sorry**__\n```')
+                entries.append(f'__**No stats found for TH{n}v{n}. Sorry**__\n')
                 continue
 
             for member in stats['overall']:
@@ -72,11 +72,11 @@ class WarStats:
 
             hr = '\n'.join(strings)
 
-            string = f' ```__**Stats for TH{n}v{n}**__'
-            string = f" ```{string}```\n{base.format('Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag')}\n{hr}"
+            string = f'__**Stats for TH{n}v{n}**__'
+            string = f"{string}\n```{base.format('Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag')}\n{hr}```"
             entries.append(string)
 
-        pages = paginator.MsgPag(ctx, entries=entries, per_page=1, message=ctx.message)
+        pages = paginator.MsgPag(ctx, entries=entries, per_page=1)
         await pages.paginate(start_page=1)
 
     # First helper function, This is used to find the TH of a player given his/her clash Tag
