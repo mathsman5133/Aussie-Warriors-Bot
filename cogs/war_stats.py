@@ -271,7 +271,7 @@ class WarStats:
                 defenseratePer = '0%'
 
             # Create 2 dicts, offense and deffense
-            overall = {'name': name, 'hitrate': hitrate, 'hitratePer': hitratePer,
+            overall = {'hitrate': hitrate, 'hitratePer': hitratePer, 'name': name,
                        'defenserate': defenserate, 'defenseratePer': defenseratePer, 'tag': tag}
             overall_stats.append(overall)
             offense = {'name': name, 'hitrate': hitrate, 'hitratePer': hitratePer, 'tag': tag}
