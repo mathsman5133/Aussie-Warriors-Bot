@@ -21,7 +21,7 @@ class WarStats:
         self._task = bot.loop.create_task(self.warStatsAutoUpdater())
 
     LEAGUE_BOT_CHANNEL = 528822099360612352
-    CLAN_TAG = '#808URP9P'
+    CLAN_TAG = '#P0LYJC8C'
 
     async def __error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
@@ -72,7 +72,7 @@ class WarStats:
 
             hr = '\n'.join(strings)
 
-            string = f'``` __**Stats for TH{n}v{n}**__'
+            string = f'__**Stats for TH{n}v{n}**__'
             string = f" ```{string}```\n{base.format('Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag')}\n{hr}"
             entries.append(string)
 
@@ -277,7 +277,6 @@ class WarStats:
         return stats
 
     async def warStatsAutoUpdater(self):
-        await (self.bot.get_channel(self.bot.info_channel_id)).send('loop started')
 
         # Infinite loop
         while True:
@@ -293,17 +292,14 @@ class WarStats:
                 # Check if we have to update stats && the war has ended
                 # (We can't check for just warEnded because, it will keep updating
                 # for same war till the status changes)
-                if self.bot.update_stats == 'true':
-                    await (self.bot.get_channel(self.bot.info_channel_id)).send('updateStats true')
 
+                if self.bot.update_stats == 'true':
                     if currentWar['state'] == 'warEnded':
-                        await (self.bot.get_channel(self.bot.info_channel_id)).send('war has ended')
-                        # await self.calculateWarStats()
+                        await self.calculateWarStats()
                         continue
                 # In case updateStats is 'false' (i.e last war ended and it's stats were updated,
                 #  so we need to check for next war, once we get a match, we make updateStats 'true')
                 elif currentWar['state'] in ['preparation', 'inWar']:
-                    await (self.bot.get_channel(self.bot.info_channel_id)).send('updatestats is false, inwar')
                     self.bot.update_stats = 'true'
                     # Write the value of updateStats in file
                     self.bot.loaded['updateStats'] = 'true'
