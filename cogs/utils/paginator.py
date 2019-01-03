@@ -61,7 +61,7 @@ class MsgPag:
         #p.append('```')
         p += ('\nPage %s/%s (%s entries) ```\nConfused? React with ℹ for more info.'%(page, self.maximum_pages, len(self.entries)))
         self.embed.description = '\n'.join(p)
-        self.message = await self.ctx.send(content = p)
+        self.message = await self.ctx.send(content=p)
         for (reaction, _) in self.reaction_emojis:
             if (self.maximum_pages == 2) and (reaction in ('⏭', '⏮')):
                 continue
@@ -146,7 +146,7 @@ class MsgPag:
     def react_check(self, reaction, user):
         if (user is None) or (user.id != self.author.id):
             return False
-        if reaction.message != self.ctx.message:
+        if reaction.message != self.message:
             return False
         for (emoji, func) in self.reaction_emojis:
             if reaction.emoji == emoji:
@@ -323,7 +323,7 @@ class EmbedPag:
     def react_check(self, reaction, user):
         if (user is None) or (user.id != self.author.id):
             return False
-        if reaction.message != self.ctx.message:
+        if reaction.message != self.message:
             return False
 
         for (emoji, func) in self.reaction_emojis:
