@@ -3,6 +3,7 @@ from cogs.utils import checks, paginator, db
 
 import asyncio
 import discord
+import re
 
 
 class war_stats(db.Table):
@@ -279,7 +280,6 @@ class WarStats:
 
         # Infinite loop
         while True:
-
             # Sleep for 2 mins before querying the API
             await asyncio.sleep(120)
 
@@ -307,16 +307,19 @@ class WarStats:
                 e = discord.Embed(colour=discord.Colour.red())
                 # You might want to log the error
                 if 'reason' in currentWar.keys():
+                    message_string = re.sub('\d', '*', currentWar['message'])  # message may contain ip. obscure that
                     e.add_field(name="Clash of Clans API Error",
-                                value=f"Reason: {currentWar['reason']}\nMessage: {currentWar['message']}")
+                                value=f"Reason: {currentWar['reason']}\nMessage: {message_string}")
+
                 elif not currentWar:
                     e.add_field(name="Clash of Clans API Error",
                                 value="The request returned `None`\nIs it an incorrect token?")
+
                 else:
                     e.add_field(name="Clash of Clans API Error",
                                 value="Unknown Error")
 
-                await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
+                await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
 
 
 def setup(bot):
