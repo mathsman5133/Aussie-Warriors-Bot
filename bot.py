@@ -71,7 +71,6 @@ class AWBot(commands.Bot):
             self.update_stats = self.loaded['updateStats']
         else:
             self.loaded['updateStats'] = 'false'
-            self.save_json()
             print('No updateStats value found. I have set it to default false')
 
         self.coc = ClashOfClans(connection=self.http_session, bot=self)
