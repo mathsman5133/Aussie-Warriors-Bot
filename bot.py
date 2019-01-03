@@ -119,8 +119,9 @@ class AWBot(commands.Bot):
 
         thing = functools.partial(save_to_json)
         await self.loop.run_in_executor(None, thing)
-        self.coc_token = self.loaded['coctoken']
-        self.update_stats = self.loaded['updateStats']
+
+        self.coc_token = self.loaded['coctoken']  # update these as they won't automatically change with json file
+        self.update_stats = self.loaded['updateStats']  # ''
 
     async def update_coc_token(self, new_token):
         """Update the coc api token in the creds json file

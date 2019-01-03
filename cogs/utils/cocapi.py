@@ -183,43 +183,28 @@ class ApiCall(object):
         async with self._session.request(method, url, headers=self.build_headers()) as r:
             data = await json_or_text(r)
 
-        if self.extract_items:
-            wrapped = wrap_response(data, self)
-            try:
-                reason = wrapped['reason']
-                if reason == 'invalidIP':
-                    # self.bearer_token = new_token
-                    # self.bot.update_coc_token(new_token)
-                    return await self._process_call(method)
-            except KeyError:
-                return wrapped
-        else:
-            try:
-                reason = data['reason']
-                if reason == 'invalidIP':
-                    return False
-            except KeyError:
-                return data
+        return data
 
     async def get(self, token):
         ''' Execute a GET API call given by the `uri_parts` stored.'''
         self.bearer_token = token
         data = await self._process_call('get')
-        if not data:
-            try:
-                token = new_token()
-            except Exception as err:
-                e = discord.Embed(colour=discord.Colour.red())
-                e.add_field(name="Clash of Clans API Error",
-                            value=f"Error: {err}\nProbably need to delete some keys from website")
-                await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
-                return
+        if 'reason' in data.keys():
+            if data['reason'] == 'invalidIP':
+                try:
+                    token = new_token()
+                except Exception as err:
+                    e = discord.Embed(colour=discord.Colour.red())
+                    e.add_field(name="Clash of Clans API Error",
+                                value=f"Error: {err}\nProbably need to delete some keys from website")
+                    await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
+                    return
 
-            self.bot.loaded['coctoken'] = token
-            await self.bot.save_json()
+                self.bot.loaded['coctoken'] = token
+                await self.bot.save_json()
 
-            self.bearer_token = token
-            data = await self._process_call('get')
+                self.bearer_token = token
+                data = await self._process_call('get')
 
         return data
 
@@ -227,22 +212,23 @@ class ApiCall(object):
         ''' Execute a POST API call given by the `uri_parts` stored.'''
         self.bearer_token = token
         data = await self._process_call('post')
-        if not data:
 
-            try:
-                token = new_token()
-            except Exception as err:
-                e = discord.Embed(colour=discord.Colour.red())
-                e.add_field(name="Clash of Clans API Error",
-                            value=f"Error: {err}\nProbably need to delete some keys from website")
-                await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
-                return
+        if 'reason' in data.keys():
+            if data['reason'] == 'invalidIP':
+                try:
+                    token = new_token()
+                except Exception as err:
+                    e = discord.Embed(colour=discord.Colour.red())
+                    e.add_field(name="Clash of Clans API Error",
+                                value=f"Error: {err}\nProbably need to delete some keys from website")
+                    await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
+                    return
 
-            self.bot.loaded['coctoken'] = token
-            await self.bot.save_json()
+                self.bot.loaded['coctoken'] = token
+                await self.bot.save_json()
 
-            self.bearer_token = token
-            data = await self._process_call('post')
+                self.bearer_token = token
+                data = await self._process_call('post')
 
         return data
 
