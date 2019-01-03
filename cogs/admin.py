@@ -5,6 +5,7 @@ from discord.ext import commands
 
 from cogs.utils import checks
 from cogs.utils.help import HelpPaginator
+from cogs.utils.updateToken import new_token
 
 import io
 import textwrap
@@ -135,6 +136,13 @@ class Admin:
 
                     await ctx.db.execute(query, user_id, ign, tag, starting_donations, current_donations,
                                                 difference, clan, exempt)
+
+    @commands.command()
+    @checks.is_owner()
+    async def coctoken(self):
+        token = new_token()
+        self.bot.loaded['coctoken'] = token
+        await self.bot.save_json()
 
     @commands.group()
     @checks.is_owner()
