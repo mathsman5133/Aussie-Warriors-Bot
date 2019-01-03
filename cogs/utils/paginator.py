@@ -47,14 +47,14 @@ class MsgPag:
             return await self.message.channel.send(f"{p}")
         if not first:
             return await self.message.edit(
-                content=f"{p}\n```Page {page}/{self.maximum_pages} ({len(self.entries)} entries)```")
+                content=f"{p}```Page {page}/{self.maximum_pages} ({len(self.entries)} entries)```")
 
         if not self.permissions.add_reactions:
             raise CannotPaginate('Bot does not have add reactions permission.')
         if not self.permissions.read_message_history:
             raise CannotPaginate('Bot does not have Read Message History permission.')
 
-        p += (f'\n```Page {page}/{self.maximum_pages} ({len(self.entries)} entries) ```'
+        p += (f'```Page {page}/{self.maximum_pages} ({len(self.entries)} entries) ```'
               f'\nConfused? React with ℹ for more info.')
 
         self.message = await self.ctx.send(p)
