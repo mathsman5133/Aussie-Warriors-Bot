@@ -139,7 +139,7 @@ class Admin:
 
     @commands.command()
     @checks.is_owner()
-    async def coctoken(self):
+    async def coctoken(self, ctx):
         token = new_token()
         self.bot.loaded['coctoken'] = token
         await self.bot.save_json()
