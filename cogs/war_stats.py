@@ -1,5 +1,6 @@
 from discord.ext import commands
 from cogs.utils import checks, paginator, db
+from cogs.admin import TabularData
 
 import asyncio
 import discord
@@ -58,8 +59,13 @@ class WarStats:
         entries = []
 
         for n in th:
+            headers = ['Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag']
             stats = await self.statsForTh(n)
             base = '{:>7}{:>10}{:>16}{:>10}{:>7}{:>14}'
+            table = TabularData()
+            table.set_columns(headers)
+            table.add_rows(list(r.values()) for r in stats['overall'])
+            render = table.render()
 
             strings = []
             if not stats['overall']:
@@ -70,10 +76,11 @@ class WarStats:
                 strings.append(base.format(member['hitrate'], member['hitratePer'], member['name'],
                                            member['defenserate'], member['defenseratePer'], member['tag']))
 
-            hr = '\n'.join(strings)
+            # hr = '\n'.join(strings)
 
             string = f'__**Stats for TH{n}v{n}**__'
-            string = f"{string}\n```{base.format('Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag')}\n{hr}```"
+            string = f'{string}```\n{render}\n```'
+            #string = f"{string}\n```{base.format('Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag')}\n{hr}```"
             entries.append(string)
 
         pages = paginator.MsgPag(ctx, entries=entries, per_page=1)
