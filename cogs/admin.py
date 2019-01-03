@@ -143,6 +143,7 @@ class Admin:
         token = new_token()
         self.bot.loaded['coctoken'] = token
         await self.bot.save_json()
+        await ctx.message.add_reaction('\u2705')
 
     @commands.group()
     @checks.is_owner()
