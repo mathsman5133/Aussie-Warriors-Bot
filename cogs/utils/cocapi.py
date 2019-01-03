@@ -1,7 +1,10 @@
+from urllib.parse import quote, urlencode
+from cogs.utils.updateToken import new_token
+
 import asyncio
 import aiohttp
 import json
-from urllib.parse import quote, urlencode
+import discord
 
 
 def build_url(endpoint, api_version, uri_parts, uri_args={}):
@@ -194,21 +197,54 @@ class ApiCall(object):
             try:
                 reason = data['reason']
                 if reason == 'invalidIP':
-                    # self.bearer_token = new_token
-                    # self.bot.update_coc_token(new_token)
-                    await self._process_call(method)
+                    return False
             except KeyError:
                 return data
 
-    async def get(self, new_token):
+    async def get(self, token):
         ''' Execute a GET API call given by the `uri_parts` stored.'''
-        self.bearer_token = new_token
-        return await self._process_call('get')
+        self.bearer_token = token
+        data = await self._process_call('get')
+        if not data:
+            try:
+                token = new_token()
+            except Exception as err:
+                e = discord.Embed(colour=discord.Colour.red())
+                e.add_field(name="Clash of Clans API Error",
+                            value=f"Error: {err}\nProbably need to delete some keys from website")
+                await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
+                return
 
-    async def post(self, new_token):
+            self.bot.loaded['coctoken'] = token
+            await self.bot.save_json()
+
+            self.bearer_token = token
+            data = await self._process_call('get')
+
+        return data
+
+    async def post(self, token):
         ''' Execute a POST API call given by the `uri_parts` stored.'''
-        self.bearer_token = new_token
-        return await self._process_call('post')
+        self.bearer_token = token
+        data = await self._process_call('post')
+        if not data:
+
+            try:
+                token = new_token()
+            except Exception as err:
+                e = discord.Embed(colour=discord.Colour.red())
+                e.add_field(name="Clash of Clans API Error",
+                            value=f"Error: {err}\nProbably need to delete some keys from website")
+                await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
+                return
+
+            self.bot.loaded['coctoken'] = token
+            await self.bot.save_json()
+
+            self.bearer_token = token
+            data = await self._process_call('post')
+
+        return data
 
 
 class ClashOfClans(ApiCall):
@@ -282,7 +318,3 @@ class ClashOfClans(ApiCall):
             api_version=api_version,
             extract_items=extract_items,
             uri_parts=None)
-
-
-class COCToken:
-    pass
