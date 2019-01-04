@@ -100,7 +100,7 @@ class WarStats:
     # Second helper function, This is used to calculate how many attacks were defended by base
     def getdefenses(self, defenderTag, currentWar):
         # Get all the attacks on base (returns [('attackerTag',stars)..] list)
-        attacksOnBase = [(attack['attackerTag'], attack['stars']) for members in currentWar['opponent']['members'] if 'attack' in members.keys() for
+        attacksOnBase = [(attack['attackerTag'], attack['stars']) for members in currentWar['opponent']['members'] if 'attacks' in members.keys() for
                          attack in members['attacks'] if attack['defenderTag'] == defenderTag]
 
         # varibles to store corresponding values
