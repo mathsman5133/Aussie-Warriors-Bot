@@ -124,9 +124,12 @@ class MsgPag:
         """Shows this message
         """
         e = discord.Embed()
-        messages = list('Welcome to the interactive paginator!\n')
-        messages.append(
-            'This interactively allows you to see pages of text by navigating with reactions. They are as follows:\n')
+        messages = list()
+
+        messages.extend(['Welcome to the interactive paginator!\n',
+                         'This interactively allows you to see pages '
+                         'of text by navigating with reactions. They are as follows:\n'])
+
         for (emoji, func) in self.reaction_emojis:
             messages.append(f'{emoji} {func.__doc__}')
 
