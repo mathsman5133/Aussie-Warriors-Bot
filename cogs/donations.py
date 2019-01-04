@@ -1,7 +1,8 @@
+from cogs.utils import checks, paginator
+from cogs.admin import TabularData
+
 import discord
 from discord.ext import commands
-
-from cogs.utils import checks, paginator
 
 
 class ShowDonations:
@@ -102,13 +103,20 @@ class ShowDonations:
             dump = await ctx.db.fetch(query, True)
 
         players = []
+        table = TabularData()
+        table.set_columns(['Member', 'Donations'])
+        print([f'<@{userid}>', avgdon] for (userid, avgdon) in dump)
+        table.add_rows((f'<@{userid}>', avgdon) for (userid, avgdon) in dump)
+        render = table.render()
+        entries = render.split('\n')
+
         try:
             players.extend(f'<@{userid}>: `{avgdon} donations`'
                            for (index, (userid, avgdon)) in enumerate(dump))
         except TypeError:
             players.append('No Accounts')
 
-        pages = paginator.EmbedPag(ctx, entries=players, per_page=20, message=ctx.message)
+        pages = paginator.EmbedPag(ctx, entries=entries, per_page=20, message=ctx.message)
         await pages.paginate(start_page=1)
 
     @commands.command(name='myavg')
