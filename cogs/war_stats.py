@@ -5,7 +5,7 @@ from cogs.admin import TabularData
 import asyncio
 import discord
 import re
-
+import pygsheets
 
 class WarStatsTable(db.Table, table_name='war_stats'):
     war_no = db.Column(db.Integer())
@@ -116,6 +116,17 @@ class WarStats:
                     defendedAttacks += 1
         # Return the values
         return defendedAttacks, totalAttacks
+
+    #Helper function, converts 'A/B' to percentage
+    def fracToPer(self, fraction):
+        split = fraction.split('/')
+        numerator = int(split[0])
+        denominator = int(split[1])
+
+        per = f"{numerator * 100 / denominator:.2f}%" if denominator != 0 else '0.00%'
+
+        return per
+
 
     # Main driver function, calculates all values, updates the db, inserts new values
 
@@ -326,6 +337,34 @@ class WarStats:
 
                 await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
 
+    #Function to send database to Google sheet
+    async def DBtoGoogleSheets(self):
+
+        # Autorize client
+        sheetsClient = pygsheets.authorize()
+
+        # Open the spreadsheet named 'AW War Stats'
+        spreadSheet = sheetsClient.open('AW War Stats')
+
+        # Connect to sheet 1 of spread sheet
+        sheet1 = spreadSheet.sheet1
+
+        # Clear all the data in it
+        sheet1.clear()
+
+        # Define the columns
+        cols = ['War No.', 'Player Name', 'Tag', 'TownHall', 'Hit Rate', 'Hit Rate %', 'Defense Rate', 'Defense Rate %']
+        # Set values of first row as cols
+        wks.update_row(1, cols)
+
+        # get all data from database
+        rows = await self.bot.pool.fetch(f"select * from war_stats")
+
+        # Convert it into a form that is accepted by google sheets
+        excelData = [[x[0], x[1], x[2], x[3], x[4], self.fracToPer(x[4]), x[5], self.fracToPer(x[5])] for x in rows]
+
+        # Write the data into sheet
+        wks.update_row(2, excelData)
 
 def setup(bot):
     bot.add_cog(WarStats(bot))
