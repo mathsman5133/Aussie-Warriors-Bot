@@ -32,6 +32,7 @@ class WarAdmin:
     @commands.group(name="warrole")
     @checks.mod_commands()
     @checks.manage_roles()
+    @checks.clan_status(['preparation', 'inWar'])
     async def war_role(self, ctx):
         """[Group] Manage the inWar role when a (league) war is in progress"""
         pass  # to prevent from throwing error
