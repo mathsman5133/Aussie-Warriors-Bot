@@ -355,7 +355,7 @@ class WarStats:
         # Define the columns
         cols = ['War No.', 'Player Name', 'Tag', 'TownHall', 'Hit Rate', 'Hit Rate %', 'Defense Rate', 'Defense Rate %']
         # Set values of first row as cols
-        wks.update_row(1, cols)
+        sheet1.update_row(1, cols)
 
         # get all data from database
         rows = await self.bot.pool.fetch(f"select * from war_stats")
@@ -364,7 +364,7 @@ class WarStats:
         excelData = [[x[0], x[1], x[2], x[3], x[4], self.fracToPer(x[4]), x[5], self.fracToPer(x[5])] for x in rows]
 
         # Write the data into sheet
-        wks.update_row(2, excelData)
+        sheet1.update_row(2, excelData)
 
 def setup(bot):
     bot.add_cog(WarStats(bot))
