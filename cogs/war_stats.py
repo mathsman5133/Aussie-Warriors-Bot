@@ -7,8 +7,9 @@ import discord
 import re
 
 
-class war_stats(db.Table):
+class WarStatsTable(db.Table, table_name='war_stats'):
     war_no = db.Column(db.Integer())
+
     name = db.Column(db.String())
     tag = db.Column(db.String())
     th = db.Column(db.Integer())
@@ -31,10 +32,12 @@ class WarStats:
     @commands.command()
     @checks.manage_server()
     @checks.mod_commands()
+    @checks.clan_status(['warEnded'])
     async def statsdump(self, ctx):
         """Updates stats in database for current finished war
 
         You must have `manage_server` permissions to run this command.
+        Aussie Warriors (clan) must have status `warEnded` for this to work
         """
         await self.calculateWarStats()
         await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
@@ -57,30 +60,23 @@ class WarStats:
             th = [th]
 
         entries = []
+        headers = ['Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag']
 
         for n in th:
-            headers = ['Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag']
             stats = await self.statsForTh(n)
-            base = '{:>7}{:>10}{:>16}{:>10}{:>7}{:>14}'
-            table = TabularData()
+
+            if not stats['overall']:
+                entries.append(f'__**No stats found for TH{n}v{n}. Sorry**__\n')
+                continue  # nothing found in db for some reason. go to next TH
+
+            table = TabularData()  # lets make a nice table for each TH page
             table.set_columns(headers)
             table.add_rows(list(r.values()) for r in stats['overall'])
             render = table.render()
 
-            strings = []
-            if not stats['overall']:
-                entries.append(f'__**No stats found for TH{n}v{n}. Sorry**__\n')
-                continue
-
-            for member in stats['overall']:
-                strings.append(base.format(member['hitrate'], member['hitratePer'], member['name'],
-                                           member['defenserate'], member['defenseratePer'], member['tag']))
-
-            # hr = '\n'.join(strings)
-
             string = f'__**Stats for TH{n}v{n}**__'
             string = f'{string}```\n{render}\n```'
-            #string = f"{string}\n```{base.format('Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag')}\n{hr}```"
+
             entries.append(string)
 
         pages = paginator.MsgPag(ctx, entries=entries, per_page=1)

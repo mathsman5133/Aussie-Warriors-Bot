@@ -83,7 +83,7 @@ class AWBot(commands.Bot):
             230214242618441728,
             341026885985239051
         ]
-
+        self.AW_CLAN_TAG = '#P0LYJC8C'
         self.loaded_extensions = initial_extensions  # for our reload_all command
 
     async def on_message(self, message):

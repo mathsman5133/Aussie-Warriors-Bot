@@ -85,6 +85,7 @@ class Admin:
         self.bot.uptime = datetime.datetime.utcnow()
 
     @commands.command()
+    @checks.is_owner()
     async def db_init(self, ctx):
         import os
         import csv
