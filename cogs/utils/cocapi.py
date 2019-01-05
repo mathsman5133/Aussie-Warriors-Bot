@@ -1,14 +1,13 @@
-from urllib.parse import quote, urlencode
-from cogs.utils.updateToken import new_token
+from urllib.parse import quote
 
 import asyncio
 import aiohttp
 import json
 import discord
+import requests
 
 
-def build_url(endpoint, api_version, uri_parts, uri_args={}):
-
+def build_url(endpoint, api_version, uri_parts):
     uri_parts = [str(x) for x in uri_parts]
     # and encoded
     uri_parts = [quote(x) for x in uri_parts]
@@ -16,9 +15,6 @@ def build_url(endpoint, api_version, uri_parts, uri_args={}):
     all_uri_parts = [endpoint, api_version, ] + uri_parts
     # join parts
     url_to_call = "/".join(all_uri_parts)
-    # add params if any
-    if uri_args:
-        url_to_call = "{}?{}".format(url_to_call, urlencode(uri_args))
 
     return url_to_call
 
@@ -28,42 +24,6 @@ async def json_or_text(response):
     if response.headers['content-type'] == 'application/json':
         return json.loads(text)
     return json.loads(text)
-
-
-def wrap_response(resp, api_call):
-    """ Wrap the requests response in an `ApiResponse` object
-
-        :param object resp: response object provided by the `requests` library.
-        :param object api_call: Api Call
-        :return: An `ApiResponse` object that wraps the content of the response.
-        :rtype: object, list or dict
-    """
-    try:
-
-        js_resp = resp.json()
-        if resp.ok:
-            if "items" in js_resp.keys():
-                r = ApiListResponse(js_resp["items"])
-            else:
-                r = ApiDictResponse(js_resp)
-            if "paging" in js_resp.keys():
-                cursors = js_resp.get("paging", {}).get("cursors", {})
-                if "after" in cursors.keys():
-                    r.next = api_call(after=cursors["after"])
-                if "before" in cursors.keys():
-                    r.previous = api_call(after=cursors["before"])
-        else:
-            r = ApiDictResponse(js_resp)
-            if "error" in js_resp.keys():
-                r.error = js_resp['error']
-            elif "message" in js_resp.keys():
-                r.error = js_resp['message']
-        # common to all
-        r.status_code = resp.status_code
-        r.headers = resp.headers
-        return r
-    except:
-        return resp
 
 
 class ApiResponse:
@@ -113,7 +73,7 @@ class ApiCall(object):
     """
 
     def __init__(self, bot, endpoint, api_version, connection=None,
-                 extract_items=True, uri_parts=None, uri_args={}):
+                 extract_items=True, uri_parts=None):
         """ Construct an ApiCall object.
 
             :param str endpoint: The endpoint od the API
@@ -123,14 +83,12 @@ class ApiCall(object):
                 returned.
             :param tuple uri_parts: Provide an initial value to uri_parts. Used with
                 recursive calls by the `__getattr__` and `__call__` methods.
-            :param dict uri_args: arguments of the call.
         """
         self.bot = bot
         self.bearer_token = ''
         self.endpoint = endpoint
         self.api_version = api_version
         self.extract_items = extract_items
-        self.uri_args = uri_args
 
         if not connection:
             loop = asyncio.get_event_loop()
@@ -155,44 +113,42 @@ class ApiCall(object):
         else:
             return ApiCall(self.bot, self.endpoint, self.api_version, self.connection,
                            extract_items=self.extract_items,
-                           uri_parts=self.uri_parts + (k,), uri_args=self.uri_args)
+                           uri_parts=self.uri_parts + (k,))
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args):
         """ Append the arguments to the `uri_parts` tuple. `self` is returned
             to enable chainability.
         """
-        if args or kwargs:
-            uri_args = {}
-            if kwargs:
-                uri_args = self.uri_args.copy()
-                uri_args.update(kwargs)
+        if args:
 
             return ApiCall(self.bot, self.endpoint, self.api_version, self.connection,
                            extract_items=self.extract_items,
-                           uri_parts=self.uri_parts + args, uri_args=uri_args)
+                           uri_parts=self.uri_parts + args)
         return self
 
     def build_headers(self):
-        """ Build the required headers to make the API call """
+        """Build the required headers to make the API call
+        """
         return {"Accept": "application/json", "authorization": "Bearer {}".format(self.bearer_token)}
 
     async def _process_call(self, method):
 
-        url = build_url(self.endpoint, self.api_version, self.uri_parts, self.uri_args)
+        url = build_url(self.endpoint, self.api_version, self.uri_parts)
 
-        async with self._session.request(method, url, headers=self.build_headers()) as r:
-            data = await json_or_text(r)
+        response = await self._session.request(method, url, headers=self.build_headers())
+        data = await response.json()
 
         return data
 
     async def get(self, token):
-        ''' Execute a GET API call given by the `uri_parts` stored.'''
+        """Execute a GET API call given by the `uri_parts` stored.
+        """
         self.bearer_token = token
         data = await self._process_call('get')
         if 'reason' in data.keys():
-            if data['reason'] == 'invalidIP':
+            if data['reason'] == 'accessDenied.invalidIp':
                 try:
-                    token = new_token()
+                    token = self.new_token()
                 except Exception as err:
                     e = discord.Embed(colour=discord.Colour.red())
                     e.add_field(name="Clash of Clans API Error",
@@ -209,14 +165,15 @@ class ApiCall(object):
         return data
 
     async def post(self, token):
-        ''' Execute a POST API call given by the `uri_parts` stored.'''
+        """Execute a POST API call given by the `uri_parts` stored.
+        """
         self.bearer_token = token
         data = await self._process_call('post')
 
         if 'reason' in data.keys():
-            if data['reason'] == 'invalidIP':
+            if data['reason'] == 'accessDenied.invalidIp':
                 try:
-                    token = new_token()
+                    token = self.new_token()
                 except Exception as err:
                     e = discord.Embed(colour=discord.Colour.red())
                     e.add_field(name="Clash of Clans API Error",
@@ -231,6 +188,58 @@ class ApiCall(object):
                 data = await self._process_call('post')
 
         return data
+
+    async def new_token(self):
+
+        current_ip = requests.get('http://ip.42.pl/short').text
+
+        token_name = 'nameOfToken'
+        token_description = 'This is an example'
+        whitelisted_ips = [current_ip]  # must be a list even if only 1 item
+
+        get_token_data = {'name': token_name,
+                          'description': token_description,
+                          'cidrRanges': whitelisted_ips}
+
+        coc_api_login_url = 'https://developer.clashofclans.com/api/login'
+        create_token_url = 'https://developer.clashofclans.com/api/apikey/create'
+
+        login_data = json.dumps({'email': self.bot.loaded['cocemail'],
+                                 'password': self.bot.loaded['cocpassword']})
+
+        login_headers = {'content-type': 'application/json'}
+
+        # Start a session, in which we will be making request to log in and to generate new Token
+
+        response = await self._session.post(coc_api_login_url,
+                                            data=login_data,
+                                            headers=login_headers)
+
+        response_dict = await response.json()  # load as json to extract 'temp token'
+
+        # These are the cookies needed to create the Token
+        game_api_token = response_dict['temporaryAPIToken']
+        game_api_url = response_dict['swaggerUrl']
+        session = response.cookies['session']
+
+        # stitch together in same format as browser
+        cookies = f'session={session};game-api-url={game_api_url};game-api-token={game_api_token}'
+
+        token_header = {'cookie': cookies,
+                        'content-type': 'application/json'}
+
+        # POST request
+        response = await self._session.post(create_token_url,
+                                            data=json.dumps(get_token_data),
+                                            headers=token_header)
+
+        # Again convert to dict to find the token
+        response_dict = await response.json()
+
+        # Supercell is weird, this is how dictionary structure ends up being
+        clean_token = response_dict['key']['key']
+
+        return clean_token
 
 
 class ClashOfClans(ApiCall):
@@ -291,7 +300,6 @@ class ClashOfClans(ApiCall):
                  extract_items=True):
         """ Contruct a ClashOfClans client.
 
-            :param str bearer_token: the AP key provided by CoC
             :param str endpoint: the endpoint of the API. Default value is https://api.clashofclans.com
             :param str api_version: the version of the API. Default value is v1
             :param boolean extract_items: if True, the response will be parsed and wraped in a list or
@@ -302,5 +310,5 @@ class ClashOfClans(ApiCall):
             connection=connection,
             endpoint=endpoint,
             api_version=api_version,
-            extract_items=extract_items,
-            uri_parts=None)
+            extract_items=extract_items
+        )
