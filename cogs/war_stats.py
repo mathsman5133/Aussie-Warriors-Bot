@@ -81,9 +81,9 @@ class WarStats:
         # if you're not an owner it's 20
         if owner_only_last_x_wars and not checks.is_owner():
             await ctx.send('Ahem, only owners may use that filter. I have set it to default `20`')
-            last_x_wars = 20
+            owner_only_last_x_wars = 20
         if not owner_only_last_x_wars:
-            last_x_wars = 20
+            owner_only_last_x_wars = 20
 
         # this is checking that if theres no TH, it uses all; if its not a valid TH it tells you,
         # or otherwise turns your TH into a list so we can iterate 1 item
