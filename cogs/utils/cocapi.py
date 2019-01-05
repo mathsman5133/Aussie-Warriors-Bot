@@ -239,6 +239,11 @@ class ApiCall(object):
         # Supercell is weird, this is how dictionary structure ends up being
         clean_token = response_dict['key']['key']
 
+        e = discord.Embed(colour=discord.Colour.green())
+        e.add_field(name='Updated COC Token',
+                    value='Number of tokens: [TODO]')
+        await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
+
         return clean_token
 
 
