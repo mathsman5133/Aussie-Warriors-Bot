@@ -1,7 +1,14 @@
 from discord.ext import commands
 
-import discord
 import re
+
+
+class COCError(commands.CheckFailure):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
 
 
 def is_owner():
@@ -59,32 +66,34 @@ def restricted_channel(channel_id):
 
 def clan_status(state: list):
     async def pred(ctx):
+
+        # This may be a little confusing so let me explain it. It will search COCAPI to ensure clan is in required state
+        # If not, the error msg is saying so. Else it goes through a couple other checks to make sure IP etc are working
+        # It then sends to COCERROR so we can add both our own message and call it when we want to (for commands)
+        # and let it fall silently when we dont want it (help command)
+        # See the error handlers in `war_admin.py` and `war_stats.py` for more info
+        # Of course if it is in the correct war state it will return True and the command will proceed
+
         bot = ctx.bot
         clash_call = await bot.coc.clans(bot.AW_CLAN_TAG).currentwar.get(bot.coc_token)
 
-        e = discord.Embed(colour=discord.Colour.red())
+        msg = ''
 
         if 'state' in clash_call.keys():
             if clash_call['state'] not in [state]:
-                e.description = (f'AW is not currently in the required `{state}` state.\n '
-                                 'Please try again later')
+                msg += (f'AW is not currently in the required `{state}` state.\n '
+                        'Please try again later')
 
         elif 'reason' in clash_call.keys():
-            message_string = re.sub('\d', '*', clash_call['message'])  # message may contain ip. obscure that
-            e.add_field(name="Clash of Clans API Error",
-                        value=f"Reason: {clash_call['reason']}\nMessage: {message_string}")
+            message_string = re.sub('\d', '\\*', clash_call['message'])  # message may contain ip. obscure that
+            msg += f"Reason: {clash_call['reason']}\nMessage: {message_string}"
 
         elif not clash_call:
-            e.add_field(name="Clash of Clans API Error",
-                        value="The request returned `None`\nIs it an incorrect token?")
+            msg += "The request returned `None`\nIs it an incorrect token?"
 
         else:
             return True  # if none of the above occur its all good
 
-        # the help command invokes checks; we only want to send a message when they're trying to use the command
-        if ctx.bot.mod_commands[-1].command.name != 'help':
-            await ctx.send(embed=e)
-
-        return False  # one of the errors has been called and the embed send. stop the command from proceeding
+        raise COCError(msg)
 
     return commands.check(pred)
