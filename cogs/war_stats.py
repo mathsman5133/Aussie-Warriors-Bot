@@ -259,9 +259,14 @@ class WarStats:
     async def statsForTh(self, townhallLevel, wars_to_fetch):
         '''Takes in townhall as arguement and gives the stats for that particular townhall level'''
 
+        # Query to get details for current war
+        currentMembers = await self.bot.coc.clans(self.CLAN_TAG).members().get(self.bot.coc_token)
+        tags = tuple([x['tag'] for x in currentMembers])
+
         # Get all the data for the particular townhall
         result = await self.bot.pool.fetch(f"select name,hitrate,defenserate,tag"
-                                           f" from war_stats where th = '{townhallLevel}'")
+                                           f" from war_stats where th = '{townhallLevel}'"
+                                           f" and tag in {tags}")
 
         # Get all distinct name for particular townhall (We will use this to display on discord)
         dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th = '{townhallLevel}'")
