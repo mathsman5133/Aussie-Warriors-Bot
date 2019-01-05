@@ -27,8 +27,11 @@ You will need to create a `creds.json` file in the main directory, containing th
 ```py
 {
   "coctoken": "" # your Clash of Clans API token from https://developer.clashofclans.com/
+  "cocemail": "" # your Clash of Clans API email login from https://developer.clashofclans.com/ (to auto-update token)
+  "cocpassword": "" # your COC API login password from https://developer.clashofclans.com/ (to update token with dynamic IP)
   "bottoken": "" # your discord bot's token from https://discordapp.com/developers/applications/
   "postgresql": "postgresql://user:password@host/database" # your postgres info from above: hint host most likely will be "localhost:5432"
+  "updateStats": "true or false string" # lowercase T/F string dictating whether the bot should auto-download warstats
 }
 ```
 
