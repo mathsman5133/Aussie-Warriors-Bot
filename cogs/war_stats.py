@@ -261,12 +261,11 @@ class WarStats:
 
         # Get all the data for the particular townhall
         result = await self.bot.pool.fetch(f"select name,hitrate,defenserate,tag"
-                                           f" from war_stats where th in {townhallLevel}")
-                                           # f" and war_no <= {wars_to_fetch}")
+                                           f" from war_stats where th = '{townhallLevel}'")
 
         # Get all distinct name for particular townhall (We will use this to display on discord)
-        dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th in {townhallLevel}")
-                                         # f"and war_no <= {wars_to_fetch}")
+        dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th = '{townhallLevel}'")
+        # f"and war_no <= {wars_to_fetch}")
         names = [x[0] for x in dump]
 
         # Create a dict of data for easy processing
@@ -322,7 +321,6 @@ class WarStats:
             offensiveStats.append(offense)
             defense = {'name': name, 'defenserate': defenserate, 'defenseratePer': defenseratePer, 'tag': tag}
             defensiveStats.append(defense)
-            await (self.bot.get_channel(self.bot.info_channel_id)).send(f'```{overall}```')
 
         stats = {'offense': offensiveStats, 'defense': defensiveStats, 'overall': overall_stats}
 
