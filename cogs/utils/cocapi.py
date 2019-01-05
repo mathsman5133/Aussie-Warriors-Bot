@@ -135,8 +135,8 @@ class ApiCall(object):
 
         url = build_url(self.endpoint, self.api_version, self.uri_parts)
 
-        response = await self._session.request(method, url, headers=self.build_headers())
-        data = await response.json()
+        async with self._session.request(method, url, headers=self.build_headers()) as r:
+            data = await json_or_text(r)
 
         return data
 
@@ -146,9 +146,9 @@ class ApiCall(object):
         self.bearer_token = token
         data = await self._process_call('get')
         if 'reason' in data.keys():
-            if data['reason'] == 'accessDenied.invalidIp':
+            if data['reason'] in ['accessDenied.invalidIp', 'accessDenied']:
                 try:
-                    token = self.new_token()
+                    token = await self.new_token()
                 except Exception as err:
                     e = discord.Embed(colour=discord.Colour.red())
                     e.add_field(name="Clash of Clans API Error",
@@ -171,9 +171,9 @@ class ApiCall(object):
         data = await self._process_call('post')
 
         if 'reason' in data.keys():
-            if data['reason'] == 'accessDenied.invalidIp':
+            if data['reason'] in ['accessDenied.invalidIp', 'accessDenied']:
                 try:
-                    token = self.new_token()
+                    token = await self.new_token()
                 except Exception as err:
                     e = discord.Embed(colour=discord.Colour.red())
                     e.add_field(name="Clash of Clans API Error",
@@ -210,17 +210,13 @@ class ApiCall(object):
         login_headers = {'content-type': 'application/json'}
 
         # Start a session, in which we will be making request to log in and to generate new Token
-
-        response = await self._session.post(coc_api_login_url,
-                                            data=login_data,
-                                            headers=login_headers)
-
-        response_dict = await response.json()  # load as json to extract 'temp token'
+        async with self._session.post(coc_api_login_url, data=login_data, headers=login_headers) as sess:
+            response_dict = await sess.json()
+            session = sess.cookies['session']
 
         # These are the cookies needed to create the Token
         game_api_token = response_dict['temporaryAPIToken']
         game_api_url = response_dict['swaggerUrl']
-        session = response.cookies['session']
 
         # stitch together in same format as browser
         cookies = f'session={session};game-api-url={game_api_url};game-api-token={game_api_token}'
@@ -229,12 +225,8 @@ class ApiCall(object):
                         'content-type': 'application/json'}
 
         # POST request
-        response = await self._session.post(create_token_url,
-                                            data=json.dumps(get_token_data),
-                                            headers=token_header)
-
-        # Again convert to dict to find the token
-        response_dict = await response.json()
+        async with self._session.post(create_token_url, json=get_token_data, headers=token_header) as sess:
+            response_dict = await sess.json()
 
         # Supercell is weird, this is how dictionary structure ends up being
         clean_token = response_dict['key']['key']
@@ -242,7 +234,7 @@ class ApiCall(object):
         e = discord.Embed(colour=discord.Colour.green())
         e.add_field(name='Updated COC Token',
                     value='Number of tokens: [TODO]')
-        await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
+        # await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
 
         return clean_token
 
