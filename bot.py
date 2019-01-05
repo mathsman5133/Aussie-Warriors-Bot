@@ -46,6 +46,11 @@ def run_bot():
     bot.pool = pool  # add db as attribute
     bot.run()  # run bot
 
+    async def close_http():
+        await bot.http_session.close()  # close aiohttp session when bot finished running
+
+    loop.run_in_executor(None, close_http)
+
 
 class AWBot(commands.Bot):
     def __init__(self):
@@ -67,6 +72,7 @@ class AWBot(commands.Bot):
                                                    family=socket.AF_INET))
 
         self.coc_token = self.loaded['coctoken']
+
         if 'updateStats' in self.loaded.keys():
             self.update_stats = self.loaded['updateStats']
         else:
