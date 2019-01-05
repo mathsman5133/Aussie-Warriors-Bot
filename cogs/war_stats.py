@@ -98,7 +98,7 @@ class WarStats:
         headers = ['Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag']
 
         for n in th:
-            stats = await self.statsForTh(n, owner_only_last_x_wars)
+            stats = await self.statsForTh(str(n), owner_only_last_x_wars)
 
             if not stats['overall']:
                 entries.append(f'__**No stats found for TH{n}v{n}. Sorry**__\n')
@@ -261,12 +261,12 @@ class WarStats:
 
         # Get all the data for the particular townhall
         result = await self.bot.pool.fetch(f"select name,hitrate,defenserate,tag"
-                                           f" from war_stats where th = '{townhallLevel}'")
-                                           # f" and war_no <= {wars_to_fetch}")
+                                           f" from war_stats where th = '{townhallLevel}'"
+                                           f" and war_no <= {wars_to_fetch}")
 
         # Get all distinct name for particular townhall (We will use this to display on discord)
-        dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th = '{townhallLevel} '")
-                                         # f"and war_no <= {wars_to_fetch}")
+        dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th = '{townhallLevel} '"
+                                         f"and war_no <= {wars_to_fetch}")
         names = [x[0] for x in dump]
 
         # Create a dict of data for easy processing
