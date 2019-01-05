@@ -49,7 +49,8 @@ def run_bot():
     async def close_http():
         await bot.http_session.close()  # close aiohttp session when bot finished running
 
-    loop.run_in_executor(None, close_http)
+    thing = functools.partial(close_http)
+    loop.run_in_executor(None, thing)
 
 
 class AWBot(commands.Bot):
