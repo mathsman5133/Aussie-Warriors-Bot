@@ -261,11 +261,11 @@ class WarStats:
 
         # Get all the data for the particular townhall
         result = await self.bot.pool.fetch(f"select name,hitrate,defenserate,tag"
-                                           f" from war_stats where th in '{townhallLevel}'")
+                                           f" from war_stats where th in {townhallLevel}")
                                            # f" and war_no <= {wars_to_fetch}")
 
         # Get all distinct name for particular townhall (We will use this to display on discord)
-        dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th in '{townhallLevel} '")
+        dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th in {townhallLevel}")
                                          # f"and war_no <= {wars_to_fetch}")
         names = [x[0] for x in dump]
 
