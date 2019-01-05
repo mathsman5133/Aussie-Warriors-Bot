@@ -25,16 +25,24 @@ class WarAdmin:
             e = discord.Embed(colour=discord.Colour.red())
             e.description = error
             await ctx.send(embed=e)
+
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(f'Missing required argument {error}!')
             await ctx.show_help()
+
+        elif isinstance(error, checks.COCError):
+            e = discord.Embed(colour=discord.Colour.red())
+            e.add_field(name='COC API Error',
+                        value=error.msg)
+            await ctx.send(embed=e)
 
     @commands.group(name="warrole")
     @checks.mod_commands()
     @checks.manage_roles()
     @checks.clan_status(['preparation', 'inWar'])
     async def war_role(self, ctx):
-        """[Group] Manage the inWar role when a (league) war is in progress"""
+        """[Group] Manage the inWar role when a (league) war is in progress
+        """
         pass  # to prevent from throwing error
 
     @war_role.command(aliases=['all', 'init'])

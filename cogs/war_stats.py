@@ -7,6 +7,7 @@ import discord
 import re
 import pygsheets
 
+
 class WarStatsTable(db.Table, table_name='war_stats'):
     war_no = db.Column(db.Integer())
 
@@ -29,6 +30,12 @@ class WarStats:
         if isinstance(error, commands.BadArgument):
             await ctx.send(error)
 
+        elif isinstance(error, checks.COCError):
+            e = discord.Embed(colour=discord.Colour.red())
+            e.add_field(name='COC API Error',
+                        value=error.msg)
+            await ctx.send(embed=e)
+
     @commands.command()
     @checks.manage_server()
     @checks.mod_commands()
@@ -43,15 +50,43 @@ class WarStats:
         await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
 
     @commands.command()
+    @checks.manage_server()
+    @checks.mod_commands()
+    async def statsheet(self, ctx):
+        """Upload the `war_stats` database to google sheets
+
+        You must have `manage_server` permissions to run this command
+        """
+        await self.DBtoGoogleSheets()
+        e = discord.Embed(colour=discord.Colour.green())  # green colour --> success
+        e.description = '\u2705 Success! [Link to sheet: here]' \
+                        '(https://docs.google.com/spreadsheets/d/' \
+                        '15aXj7a7GyDahToZHfSFo4YmH1DfZrwTjIL2an99o4FY/edit?usp=sharing)'
+        await ctx.send(embed=e)
+        await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
+
+    @commands.command()
     @checks.restricted_channel(LEAGUE_BOT_CHANNEL)
-    async def warstats(self, ctx, th: int = None):
+    async def warstats(self, ctx, th: int = None, owner_only_last_x_wars: int=None):
         """Gives you war stats for a max. of 20 wars
 
         Optional: Specify the TH level of which to get stats. Else all THs will be added to a pagination session
+        Optional: [Owner-only] Specify the number of wars for which to get stats (Between 1 and 20)
         This command can only be used in #league-bot
+
         """
         all_ths = [9, 10, 11, 12]
 
+        # this is messy, but its saying that owners can specify the number of wars to fetch,
+        # if you're not an owner it's 20
+        if owner_only_last_x_wars and not checks.is_owner():
+            await ctx.send('Ahem, only owners may use that filter. I have set it to default `20`')
+            last_x_wars = 20
+        if not owner_only_last_x_wars:
+            last_x_wars = 20
+
+        # this is checking that if theres no TH, it uses all; if its not a valid TH it tells you,
+        # or otherwise turns your TH into a list so we can iterate 1 item
         if not th:
             th = all_ths
         elif th not in all_ths:
@@ -63,7 +98,7 @@ class WarStats:
         headers = ['Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag']
 
         for n in th:
-            stats = await self.statsForTh(n)
+            stats = await self.statsForTh(n, owner_only_last_x_wars)
 
             if not stats['overall']:
                 entries.append(f'__**No stats found for TH{n}v{n}. Sorry**__\n')
@@ -221,15 +256,17 @@ class WarStats:
         self.bot.loaded['updateStats'] = 'false'
         await self.bot.save_json()
 
-    async def statsForTh(self, townhallLevel):
+    async def statsForTh(self, townhallLevel, wars_to_fetch):
         '''Takes in townhall as arguement and gives the stats for that particular townhall level'''
 
         # Get all the data for the particular townhall
         result = await self.bot.pool.fetch(f"select name,hitrate,defenserate,tag"
-                                           f" from war_stats where th = '{townhallLevel}'")
+                                           f" from war_stats where th = '{townhallLevel}'"
+                                           f" and war_no <= {wars_to_fetch}")
 
         # Get all distinct name for particular townhall (We will use this to display on discord)
-        dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th = '{townhallLevel}'")
+        dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th = '{townhallLevel} '"
+                                         f"and war_no <= {wars_to_fetch}")
         names = [x[0] for x in dump]
 
         # Create a dict of data for easy processing
@@ -337,7 +374,7 @@ class WarStats:
 
                 await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
 
-    #Function to send database to Google sheet
+    # Function to send database to Google sheet
     async def DBtoGoogleSheets(self):
 
         # Autorize client
@@ -365,6 +402,7 @@ class WarStats:
 
         # Write the data into sheet
         sheet1.update_row(2, excelData)
+
 
 def setup(bot):
     bot.add_cog(WarStats(bot))
