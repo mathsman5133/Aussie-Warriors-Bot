@@ -106,6 +106,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# files ending in .json
+# files ending in .json, .db, .xlsx 
 *.json
+*.db
+*.xlsx
 
