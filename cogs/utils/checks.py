@@ -59,7 +59,10 @@ def restricted_channel(channel_id):
         if is_owner():
             return True
 
-        return ctx.channel.id == channel_id
+        if channel_id == ctx.channel.id:
+            return True
+
+        return False
 
     return commands.check(pred)
 
