@@ -5,7 +5,6 @@ from discord.ext import commands
 
 from cogs.utils import checks
 from cogs.utils.help import HelpPaginator
-from cogs.utils.updateToken import new_token
 
 import io
 import textwrap
@@ -136,15 +135,18 @@ class Admin:
                                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"""
 
                     await ctx.db.execute(query, user_id, ign, tag, starting_donations, current_donations,
-                                                difference, clan, exempt)
+                                         difference, clan, exempt)
 
     @commands.command()
     @checks.is_owner()
     async def coctoken(self, ctx):
-        token = new_token()
+        """Manually update COCAPI Token
+        [Owner only command]
+        """
+        token = await self.bot.coc.new_token()
         self.bot.loaded['coctoken'] = token
         await self.bot.save_json()
-        await ctx.message.add_reaction('\u2705')
+        await ctx.message.add_reaction('\u2705')  # green tick --> success
 
     @commands.group()
     @checks.is_owner()
@@ -287,6 +289,9 @@ class Admin:
 
         if not channel:
             return ctx.send("Invalid channel ID: either I am not in that server or it doesn't exist")
+
+        if ctx.message.attachments:
+            message = message + ctx.message.attachments[0].url
 
         e = discord.Embed(colour=discord.Colour.blue())  # blue --> informative
         e.description = message
