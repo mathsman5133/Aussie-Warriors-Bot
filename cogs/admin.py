@@ -138,6 +138,11 @@ class Admin:
                                          difference, clan, exempt)
 
     @commands.command()
+    async def ping(self, ctx):
+        duration = self.bot.latency * 1000
+        await ctx.send('Pong! {:.2f}ms'.format(duration))
+
+    @commands.command()
     @checks.is_owner()
     async def coctoken(self, ctx):
         """Manually update COCAPI Token
