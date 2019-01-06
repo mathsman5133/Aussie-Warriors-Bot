@@ -261,15 +261,16 @@ class WarStats:
 
         # Query to get details for current war
         currentMembers = await self.bot.coc.clans(self.CLAN_TAG).members().get(self.bot.coc_token)
-        tags = tuple([x['tag'] for x in currentMembers])
+        tags = tuple([x['tag'] for x in currentMembers['items']])
 
         # Get all the data for the particular townhall
         result = await self.bot.pool.fetch(f"select name,hitrate,defenserate,tag"
                                            f" from war_stats where th = '{townhallLevel}'"
-                                           f" and tag in {tags}")
+                                           f" and tag in {tags} and war_no <= {wars_to_fetch}")
 
         # Get all distinct name for particular townhall (We will use this to display on discord)
-        dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th = '{townhallLevel}'")
+        dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th = '{townhallLevel}'"
+                                         f" and tag in {tags} and war_no <= {wars_to_fetch}")
         # f"and war_no <= {wars_to_fetch}")
         names = [x[0] for x in dump]
 
