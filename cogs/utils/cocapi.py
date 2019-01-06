@@ -203,14 +203,16 @@ class ApiCall(object):
 
         coc_api_login_url = 'https://developer.clashofclans.com/api/login'
         create_token_url = 'https://developer.clashofclans.com/api/apikey/create'
+        list_tokens_url = 'https://developer.clashofclans.com/api/apikey/list'
+        delete_token_url = 'https://developer.clashofclans.com/api/apikey/revoke'
 
-        login_data = json.dumps({'email': self.bot.loaded['cocemail'],
-                                 'password': self.bot.loaded['cocpassword']})
+        login_data = {'email': self.bot.loaded['cocemail'],
+                      'password': self.bot.loaded['cocpassword']}
 
         login_headers = {'content-type': 'application/json'}
 
         # Start a session, in which we will be making request to log in and to generate new Token
-        async with self._session.post(coc_api_login_url, data=login_data, headers=login_headers) as sess:
+        async with self._session.post(coc_api_login_url, json=login_data, headers=login_headers) as sess:
             response_dict = await sess.json()
             session = sess.cookies['session']
 
@@ -224,6 +226,23 @@ class ApiCall(object):
         token_header = {'cookie': cookies,
                         'content-type': 'application/json'}
 
+        # Get list of existing keys
+        async with self._session.post(list_tokens_url, json=(), headers=token_header) as sess:
+            existing_tokens_dict = await sess.json()
+
+        for token in existing_tokens_dict['keys']:
+
+            if current_ip in token['cidrRanges']:
+                return token['key']  # if we have a token already with that IP then why bother creating another one
+
+            else:
+                # otherwise if its an outdated IP adress we don't need it anymore, so lets delete it to not clog them up
+                # and to prevent hitting the 10 token limit
+                token_id = token['id']
+                data = {'id': token_id}
+                async with self._session.post(delete_token_url, json=data, headers=token_header) as sess:
+                    response = await sess.json()
+
         # POST request
         async with self._session.post(create_token_url, json=get_token_data, headers=token_header) as sess:
             response_dict = await sess.json()
@@ -233,8 +252,8 @@ class ApiCall(object):
 
         e = discord.Embed(colour=discord.Colour.green())
         e.add_field(name='Updated COC Token',
-                    value='Number of tokens: [TODO]')
-        # await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
+                    value='\u200b')
+        await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
 
         return clean_token
 
