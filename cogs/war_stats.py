@@ -6,6 +6,8 @@ import asyncio
 import discord
 import re
 import pygsheets
+import dateutil
+import datetime
 
 
 class WarStatsTable(db.Table, table_name='war_stats'):
@@ -68,14 +70,41 @@ class WarStats:
     @commands.command()
     @checks.is_owner()
     async def war_status(self, ctx, tag_or_name: str=None):
+        if not tag_or_name:
+            tag_or_name = self.bot.AW_CLAN_TAG  # lets set it to AW tag for the lazy
+
         clan = await self.bot.coc.clans(tag_or_name).get(self.bot.coc_token)
-        print(clan)
+
         if not clan or 'notFound' in clan.values():
-            raise commands.BadArgument(':x: Clan Not Found!')
+            raise commands.BadArgument(':x: Clan Not Found!')  # api returned {reason: 'notFound'} or some other error
 
         e = discord.Embed(colour=discord.Colour.blue())
         e.add_field(name=clan['name'],
                     value=clan['tag'])
+
+        if clan['isWarLogPublic']:  # we will get errors if warlog is closed
+            war = await self.bot.coc.clans(tag_or_name).currentwar.get(self.bot.coc_token)
+
+            e.add_field(name='War State:',
+                        value=war['state'],
+                        inline=False)
+
+            if 'endTime' in war.keys():  # if state is notInWar we will get errors
+                end_time = dateutil.parser.parse(war['endTime'])
+
+                delta = end_time - datetime.datetime.now(datetime.timezone.utc)
+                hours, remainder = divmod(int(delta.total_seconds()), 3600)
+                minutes, seconds = divmod(remainder, 60)
+
+                e.add_field(name='Opponent:',
+                            value=f"{war['opponent']['name']}\n"
+                                  f"{war['opponent']['tag']}",
+                            inline=False)
+                e.add_field(name="War End Time:",
+                            value=f'{hours} hours {minutes} minutes {seconds} seconds',
+                            inline=False)
+
+        await ctx.send(embed=e)
 
     @commands.command()
     @checks.manage_server()
@@ -322,7 +351,7 @@ class WarStats:
             cummulativeTotalAttacks = 0
             cummulativeDefended = 0
             cummulativeTotalDefenses = 0
-            tag = ''
+            tag = set()
 
             # Iterate over all data
             for x in data:
@@ -337,7 +366,7 @@ class WarStats:
                     temp_defenserate = x['defenserate'].split('/')
                     cummulativeDefended += int(temp_defenserate[0])
                     cummulativeTotalDefenses += int(temp_defenserate[1])
-                    tag += x['tag']
+                    tag.add(x['tag'])
 
             # Format all stats
             hitrate = str(cummulativeHits)+'/'+str(cummulativeTotalAttacks)
