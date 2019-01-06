@@ -66,6 +66,36 @@ class WarStats:
         await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
 
     @commands.command()
+    @checks.is_owner()
+    async def war_status(self, ctx, tag_or_name: str=None):
+        clan = await self.bot.coc.clans(tag_or_name).get(self.bot.coc_token)
+        print(clan)
+        if not clan or 'notFound' in clan.values():
+            raise commands.BadArgument(':x: Clan Not Found!')
+
+        e = discord.Embed(colour=discord.Colour.blue())
+        e.add_field(name=clan['name'],
+                    value=clan['tag'])
+
+    @commands.command()
+    @checks.manage_server()
+    async def update_stats(self, ctx, true_false: bool=None):
+        if not true_false:
+            status = self.bot.loaded['updateStats']  # tell them what status is if not specified
+            e = discord.Embed(description=status)
+            e.colour = discord.Colour.green() if status == 'true' else discord.Colour.red()  # red = false, green = true
+            return await ctx.send(embed=e)  # send and return
+
+        self.bot.mod_commands.append(ctx)  # we don't want to send a mod log if they're just getting status
+
+        true_false = 'true' if true_false else 'false'  # convert that bool to a string true/false
+
+        self.bot.loaded['updateStats'] = true_false
+        await self.bot.save_json()  # save that value in json for persistant storage when bot down
+
+        await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
+
+    @commands.command()
     @checks.restricted_channel(LEAGUE_BOT_CHANNEL)
     async def warstats(self, ctx, th: int = None, owner_only_last_x_wars: int=None):
         """Gives you war stats for a max. of 20 wars
@@ -79,7 +109,9 @@ class WarStats:
 
         # this is messy, but its saying that owners can specify the number of wars to fetch,
         # if you're not an owner it's 20
-        if owner_only_last_x_wars and not checks.is_owner():
+        is_owner = True if ctx.author.id in self.bot.owners else False
+
+        if owner_only_last_x_wars and not is_owner:
             await ctx.send('Ahem, only owners may use that filter. I have set it to default `20`')
             owner_only_last_x_wars = 20
         if not owner_only_last_x_wars:
