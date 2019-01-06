@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import datetime
 import traceback
+import time
 
 
 class CommandLogging:
@@ -11,7 +12,7 @@ class CommandLogging:
         self.bot.mod_commands = []
 
     async def on_command(self, ctx):
-        ctx.start_time = datetime.datetime.utcnow()
+        ctx.start_time = time.perf_counter()
 
     async def on_command_completion(self, ctx):
         if ctx not in self.bot.mod_commands:
@@ -19,9 +20,8 @@ class CommandLogging:
         if ctx.command.name == 'help':
             return  # for some reason help command gets past too so lets deal with that now
 
-        time_taken = datetime.datetime.utcnow() - ctx.start_time
-        time_taken_readable = (f'{time_taken.microseconds/1000000} sec'
-                               if time_taken.microseconds > 500000 else f'{time_taken.microseconds/1000}ms')
+        time_now = time.perf_counter()
+        time_taken = round(time_now - ctx.start_time, 4)
 
         e = discord.Embed(colour=discord.Colour.green())
 
@@ -34,7 +34,7 @@ class CommandLogging:
         e.add_field(name='Location:',
                     value=f'Channel: #{ctx.channel.name} ({ctx.channel.id})')
         e.add_field(name='Time taken:',
-                    value=time_taken_readable)
+                    value=f'**{time_taken}** seconds')
         e.timestamp = datetime.datetime.utcnow()
 
         await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
@@ -48,9 +48,8 @@ class CommandLogging:
         if isinstance(error, ignored):
             return
 
-        time_taken = datetime.datetime.utcnow() - ctx.start_time
-        time_taken_readable = (f'{time_taken.microseconds/1000000} sec'
-                               if time_taken.microseconds > 500000 else f'{time_taken.microseconds/1000}ms')
+        time_now = time.perf_counter()
+        time_taken = round(time_now - ctx.start_time, 4)
 
         e = discord.Embed(colour=discord.Colour.red())
 
@@ -66,11 +65,12 @@ class CommandLogging:
         e.add_field(name='Location:',
                     value=f'Channel: #{ctx.channel.name} ({ctx.channel.id})')
         e.add_field(name='Time taken:',
-                    value=time_taken_readable)
+                    value=f'**{time_taken}** seconds')
         e.timestamp = datetime.datetime.utcnow()
         e.set_footer(text="Please ping maths if the solution is not obvious or you don't understand")
 
-        await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
+        # await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
+        await ctx.send(embed=e)
 
 
 def setup(bot):
