@@ -330,10 +330,8 @@ class WarStats:
                                            f" and tag in {tags} and war_no <= {wars_to_fetch}")
 
         # Get all distinct name for particular townhall (We will use this to display on discord)
-        dump = await self.bot.pool.fetch(f"select distinct name from war_stats where th = '{townhallLevel}'"
+        dump = await self.bot.pool.fetch(f"select distinct name, tag from war_stats where th = '{townhallLevel}'"
                                          f" and tag in {tags} and war_no <= {wars_to_fetch}")
-        # f"and war_no <= {wars_to_fetch}")
-        names = [x[0] for x in dump]
 
         # Create a dict of data for easy processing
         data = [{'name': x[0], 'hitrate': x[1], 'defenserate':x[2], 'tag': x[3]} for x in result]
@@ -344,19 +342,18 @@ class WarStats:
         overall_stats = []
 
         # iterate over all names
-        for name in names:
+        for name, tag in dump:
 
             # Variables to hold values to find out hitrates and defenserates
             cummulativeHits = 0
             cummulativeTotalAttacks = 0
             cummulativeDefended = 0
             cummulativeTotalDefenses = 0
-            tag = set()
 
             # Iterate over all data
             for x in data:
                 # If the name matches
-                if x['name'] == name:
+                if x['tag'] == tag:
                     # Offensive stats calculations
                     temp_hitrate = x['hitrate'].split('/')
                     cummulativeHits += int(temp_hitrate[0])
@@ -366,7 +363,6 @@ class WarStats:
                     temp_defenserate = x['defenserate'].split('/')
                     cummulativeDefended += int(temp_defenserate[0])
                     cummulativeTotalDefenses += int(temp_defenserate[1])
-                    tag.add(x['tag'])
 
             # Format all stats
             hitrate = str(cummulativeHits)+'/'+str(cummulativeTotalAttacks)
