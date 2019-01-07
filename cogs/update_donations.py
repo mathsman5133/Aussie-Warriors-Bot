@@ -1,9 +1,12 @@
 import datetime
+import calendar
+import asyncio
 
 import discord
 from discord.ext import commands
 
 from cogs.utils import checks, db
+from cogs.donations import ShowDonations
 
 
 class Season(db.Table):
@@ -25,8 +28,13 @@ class Averages(db.Table):
 class Update:
     def __init__(self, bot):
         self.bot = bot
+        self._tasks = []
+        self._tasks.append(bot.loop.create_task(self.auto_daily_updates()))
+        self._tasks.append(bot.loop.create_task(self.auto_monthly_update()))
+        self._tasks.append(bot.loop.create_task(self.auto_send_pings()))
 
-    async def __error(self, ctx, error):
+    @staticmethod
+    async def __error(ctx, error):
         if isinstance(error, commands.BadArgument):
             e = discord.Embed(colour=discord.Colour.red())
             e.description = error
@@ -145,6 +153,8 @@ class Update:
             if achievement['name'] == 'Friend in Need':
                 donations = achievement['value']
                 break
+        else:
+            return
 
         query = "UPDATE claims SET starting_donations=$1 WHERE tag=$2"
         await self.bot.pool.execute(query, donations, tag)
@@ -186,6 +196,8 @@ class Update:
                 if achievement['name'] == 'Friend in Need':
                     current_donations = achievement['value']
                     break
+            else:
+                break
 
             donations_this_season = current_donations - individual['starting_donations']
             donations_required_difference = donations_this_season - (await self.donations_by_today())
@@ -208,6 +220,8 @@ class Update:
                 if achievement['name'] == 'Friend in Need':
                     current_donations = achievement['value']
                     break
+            else:
+                break
 
             donations_this_season = current_donations - individual['starting_donations']
             donations_required_difference = donations_this_season - (await self.donations_by_today())
@@ -220,6 +234,39 @@ class Update:
             await self.update_database(donations_this_season, donations_required_difference, clan, individual['tag'])
 
         await self.refresh_avg()
+
+    async def auto_daily_updates(self):
+        now = datetime.datetime.utcnow()
+
+        if now.hour == 6:  # if its 6oc
+            await self.update_donations_by_today()
+            await self.update()
+            await self.refresh_avg()
+            await (self.bot.get_channel(self.bot.info_channel_id)).send('auto-daily-update done')
+
+        await asyncio.sleep(3600)  # sleep for an hour
+
+    async def auto_monthly_update(self):
+        cal = calendar.Calendar(0)
+        month = cal.monthdatescalendar(datetime.date.today().year, datetime.date.today().month)
+        lastweek = month[-1]
+        monday = lastweek[0]
+        if datetime.date.today() == monday:  # if its the last monday of the month
+            await self.manual_reset()
+            await self.update_donations_by_today()
+            await self.update()
+            await self.refresh_avg()
+            await (self.bot.get_channel(self.bot.info_channel_id)).send('auto-monthly-update done')
+
+        await asyncio.sleep(86399)  # sleep for a second less than a day
+
+    async def auto_send_pings(self):
+        show_donations_class = ShowDonations(self.bot)
+        today = datetime.datetime.utcnow()
+
+        if today.hour == 7 and today.day == 2:  # if its 7oc on tuesday
+            await show_donations_class.send_donation_pings()
+        await asyncio.sleep(3600)  # sleep for an hour
 
 
 def setup(bot):

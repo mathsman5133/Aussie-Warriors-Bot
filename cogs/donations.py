@@ -139,8 +139,8 @@ class ShowDonations:
         e = discord.Embed(colour=discord.Colour.blue())
         e.title = 'Average Donation List - Warnings only'
         e.description = players
-        self.bot.donation_ping_webhook.send(embed=e)
-        self.bot.donation_ping_webhook.send(
+        await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
+        await (self.bot.get_channel(self.bot.info_channel_id)).send(
             f'{ping}\nThe average donations of all your accounts currently have '
             f'less than the required: {str(self.donations_by_today())} troop space by today. '
             f'\nPlease find your IGN above and donate some troops! '
@@ -155,7 +155,7 @@ class ShowDonations:
                            'for that day of the month once a week, at approx. Tuesday 5pm EST, '
                            'or Wednesday 7am AEST. \n\nIf any messages have been sent in error, '
                            'or something isnt working, please ping <@230214242618441728>')
-        self.bot.donation_ping_webhook.send(embed=eh)
+        await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=eh)
 
 
 def setup(bot):
