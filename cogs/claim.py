@@ -262,8 +262,6 @@ class Claim:
 
         unique_ids = set([n[2] for n in dump])  # unique list of discord id's so can group acc's by discord user
 
-        unique_ids = set([n[2] for n in dump])  # unique list of discord id's so can group acc's by discord user
-
         claimed_tags = [x['tag'] for x in dump]
 
         unclaimed_tags = []
@@ -296,10 +294,8 @@ class Claim:
         """
         clan_members = await self.bot.coc.clans('#808URP9P').members.get(self.bot.coc_token)
 
-        query = "SELECT tag, ign, userid FROM claims WHERE clan = $1"
+        query = "SELECT ign, tag, userid FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussies 4 War')
-
-        unique_ids = set([n[2] for n in dump])  # unique list of discord id's so can group acc's by discord user
 
         unique_ids = set([n[2] for n in dump])  # unique list of discord id's so can group acc's by discord user
 
@@ -317,18 +313,9 @@ class Claim:
 
         entries = ['__**Claimed Bases**__']
 
-        # entries.extend(f'{ign} ({tag}): <@{userid}>'
-        #                for (index, (ign, tag, userid)) in enumerate(dump) or 'No Members')
-
         for user in unique_ids:
             #  make string of accounts in format ign (tag): donation\n ...more accounts
             string = '\n'.join(f'{n[0]} ({n[1]})' for n in dump if n[2] == user)
-            new_string = f'<@{user}>\n{string}'  # add the mention at top of string
-            entries.append(new_string)  # add to our list of strings
-
-        for user in unique_ids:
-            #  make string of accounts in format ign (tag): donation\n ...more accounts
-            string = '\n'.join(f'   {n[0]} ({n[1]})' for n in dump if n[2] == user)
             new_string = f'<@{user}>\n{string}'  # add the mention at top of string
             entries.append(new_string)  # add to our list of strings
 
