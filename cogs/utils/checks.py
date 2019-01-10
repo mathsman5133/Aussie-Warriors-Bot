@@ -47,6 +47,19 @@ def manage_server():
     return commands.check(pred)
 
 
+def manage_channels():
+    async def pred(ctx):
+        if is_owner():
+            return True
+
+        if not ctx.guild:
+            return False
+
+        return ctx.author.guild_permissions.manage_channels
+
+    return commands.check(pred)
+
+
 def mod_commands():
     def pred(ctx):
         ctx.bot.mod_commands.append(ctx)
