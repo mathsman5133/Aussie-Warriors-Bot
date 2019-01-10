@@ -271,3 +271,9 @@ class Update:
 
 def setup(bot):
     bot.add_cog(Update(bot))
+
+
+async def teardown(bot):
+    for task in Update(bot)._tasks:
+        await task.cancel()  # we want to stop the task as we will re-initiate it when we reload
+
