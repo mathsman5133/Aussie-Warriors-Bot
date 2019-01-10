@@ -28,10 +28,10 @@ class Averages(db.Table):
 class Update:
     def __init__(self, bot):
         self.bot = bot
-        self._tasks = []
-        self._tasks.append(bot.loop.create_task(self.auto_daily_updates()))
-        self._tasks.append(bot.loop.create_task(self.auto_monthly_update()))
-        self._tasks.append(bot.loop.create_task(self.auto_send_pings()))
+
+        self.auto_daily_task = bot.loop.create_task(self.auto_daily_updates())
+        self.auto_monthly_task = bot.loop.create_task(self.auto_monthly_update())
+        self.auto_pings_task = bot.loop.create_task(self.auto_send_pings())
 
     @staticmethod
     async def __error(ctx, error):
@@ -226,47 +226,69 @@ class Update:
             donations_this_season = current_donations - individual['starting_donations']
             donations_required_difference = donations_this_season - (await self.donations_by_today())
 
-            try:
-                clan = player['clan']['name']
-            except KeyError:
-                clan = ''
+            clan = player['clan']['name'] if 'clan' in player.keys() else ''
 
             await self.update_database(donations_this_season, donations_required_difference, clan, individual['tag'])
 
         await self.refresh_avg()
 
     async def auto_daily_updates(self):
-        now = datetime.datetime.utcnow()
+        try:
+            while not self.bot.is_closed():
+                now = datetime.datetime.utcnow()
 
-        if now.hour == 6:  # if its 6oc
-            await self.update_donations_by_today()
-            await self.update()
-            await self.refresh_avg()
-            await (self.bot.get_channel(self.bot.info_channel_id)).send('auto-daily-update done')
+                if now.hour == 6:  # if its 6oc
+                    await self.update_donations_by_today()
+                    await self.update()
+                    await self.refresh_avg()
+                    await (self.bot.get_channel(self.bot.info_channel_id)).send('auto-daily-update done')
 
-        await asyncio.sleep(3600)  # sleep for an hour
+                await asyncio.sleep(3600)  # sleep for an hour
+
+        except asyncio.CancelledError:
+            pass
+        except (OSError, discord.ConnectionClosed):
+            self.auto_daily_task.cancel()
+            self.auto_daily_task = self.bot.loop.create_task(self.auto_daily_updates())
 
     async def auto_monthly_update(self):
-        cal = calendar.Calendar(0)
-        month = cal.monthdatescalendar(datetime.date.today().year, datetime.date.today().month)
-        lastweek = month[-1]
-        monday = lastweek[0]
-        if datetime.date.today() == monday:  # if its the last monday of the month
-            await self.manual_reset()
-            await self.update_donations_by_today()
-            await self.update()
-            await self.refresh_avg()
-            await (self.bot.get_channel(self.bot.info_channel_id)).send('auto-monthly-update done')
+        try:
+            while not self.bot.is_closed():
+                # there is probably a more elegant way of finding the last monday of the month date
+                cal = calendar.Calendar(0)
+                month = cal.monthdatescalendar(datetime.date.today().year, datetime.date.today().month)
+                lastweek = month[-1]
+                monday = lastweek[0]
 
-        await asyncio.sleep(86399)  # sleep for a second less than a day
+                if datetime.date.today() == monday:  # if its the last monday of the month
+                    await self.manual_reset()
+                    await self.update_donations_by_today()
+                    await self.update()
+                    await self.refresh_avg()
+                    await (self.bot.get_channel(self.bot.info_channel_id)).send('auto-monthly-update done')
+
+                await asyncio.sleep(86399)  # sleep for a second less than a day
+        except asyncio.CancelledError:
+            pass
+        except (OSError, discord.ConnectionClosed):
+            self.auto_daily_task.cancel()
+            self.auto_daily_task = self.bot.loop.create_task(self.auto_daily_updates())
 
     async def auto_send_pings(self):
-        show_donations_class = ShowDonations(self.bot)
-        today = datetime.datetime.utcnow()
+        try:
+            while not self.bot.is_closed():
+                show_donations_class = ShowDonations(self.bot)
+                today = datetime.datetime.utcnow()
 
-        if today.hour == 7 and today.day == 2:  # if its 7oc on tuesday
-            await show_donations_class.send_donation_pings()
-        await asyncio.sleep(3600)  # sleep for an hour
+                if today.hour == 7 and today.weekday() == 1:  # if its 7oc on tuesday
+                    await show_donations_class.send_donation_pings()
+                await asyncio.sleep(3600)  # sleep for an hour
+
+        except asyncio.CancelledError:
+            pass
+        except (OSError, discord.ConnectionClosed):
+            self.auto_daily_task.cancel()
+            self.auto_daily_task = self.bot.loop.create_task(self.auto_daily_updates())
 
 
 def setup(bot):
@@ -274,6 +296,10 @@ def setup(bot):
 
 
 async def teardown(bot):
-    for task in Update(bot)._tasks:
-        await task.cancel()  # we want to stop the task as we will re-initiate it when we reload
+    updclass = Update(bot)
+
+    # lets cancel the tasks now as we will reitiniate if reload cog. else we don't want them going anyway
+    await updclass.auto_daily_task.cancel()
+    await updclass.auto_monthly_task.cancel()
+    await updclass.auto_pings_task.cancel()
 
