@@ -67,11 +67,6 @@ class AWBot(commands.Bot):
         # our json loaded creds file with tokens
         self.loaded = creds
 
-        # aiohttp session, coc token and coc session for use with clash of clans api
-        self.http_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector
-                                                  (resolver=aiohttp.AsyncResolver,
-                                                   family=socket.AF_INET))
-
         self.coc_token = self.loaded['coctoken']
 
         if 'updateStats' in self.loaded.keys():
@@ -80,7 +75,7 @@ class AWBot(commands.Bot):
             self.loaded['updateStats'] = 'false'
             print('No updateStats value found. I have set it to default false')
 
-        self.coc = ClashOfClans(connection=self.http_session, bot=self)
+        self.coc = ClashOfClans(bot=self)
 
         # github repo object based on main directory we're in. used for `git pull` commands
         self.repo = git.Repo(REPO_PATH)
@@ -139,6 +134,12 @@ class AWBot(commands.Bot):
         """Useful for knowing when bot has connected
         """
         print(f'Ready: {self.user} (ID: {self.user.id})')
+
+    async def httpsession(self):
+        http_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector
+                                             (resolver=aiohttp.AsyncResolver,
+                                              family=socket.AF_INET))
+        return http_session
 
     def run(self):
         # run the bot

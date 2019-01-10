@@ -1,7 +1,5 @@
 from urllib.parse import quote
 
-import asyncio
-import aiohttp
 import json
 import discord
 import requests
@@ -72,7 +70,7 @@ class ApiCall(object):
             api.clans(name='theclan', minMembers=10)
     """
 
-    def __init__(self, bot, endpoint, api_version, connection=None,
+    def __init__(self, bot, endpoint, api_version,
                  extract_items=True, uri_parts=None):
         """ Construct an ApiCall object.
 
@@ -90,12 +88,6 @@ class ApiCall(object):
         self.api_version = api_version
         self.extract_items = extract_items
 
-        if not connection:
-            loop = asyncio.get_event_loop()
-            self._session = aiohttp.ClientSession(loop=loop)
-        else:
-            self._session = connection
-
         if uri_parts is None:
             self.uri_parts = ()
         else:
@@ -111,7 +103,7 @@ class ApiCall(object):
         if k.startswith("connection"):
             pass
         else:
-            return ApiCall(self.bot, self.endpoint, self.api_version, self.connection,
+            return ApiCall(self.bot, self.endpoint, self.api_version,
                            extract_items=self.extract_items,
                            uri_parts=self.uri_parts + (k,))
 
@@ -121,7 +113,7 @@ class ApiCall(object):
         """
         if args:
 
-            return ApiCall(self.bot, self.endpoint, self.api_version, self.connection,
+            return ApiCall(self.bot, self.endpoint, self.api_version,
                            extract_items=self.extract_items,
                            uri_parts=self.uri_parts + args)
         return self
@@ -135,8 +127,9 @@ class ApiCall(object):
 
         url = build_url(self.endpoint, self.api_version, self.uri_parts)
 
-        async with self._session.request(method, url, headers=self.build_headers()) as r:
-            data = await json_or_text(r)
+        async with self.bot.httpsession() as session:
+            async with session.request(method, url, headers=self.build_headers()) as r:
+                data = await json_or_text(r)
 
         return data
 
@@ -212,9 +205,10 @@ class ApiCall(object):
         login_headers = {'content-type': 'application/json'}
 
         # Start a session, in which we will be making request to log in and to generate new Token
-        async with self._session.post(coc_api_login_url, json=login_data, headers=login_headers) as sess:
-            response_dict = await sess.json()
-            session = sess.cookies['session']
+        async with self.bot.httpsession() as session:
+            async with session.post(coc_api_login_url, json=login_data, headers=login_headers) as sess:
+                response_dict = await sess.json()
+                session = sess.cookies['session']
 
         # These are the cookies needed to create the Token
         game_api_token = response_dict['temporaryAPIToken']
@@ -227,8 +221,9 @@ class ApiCall(object):
                         'content-type': 'application/json'}
 
         # Get list of existing keys
-        async with self._session.post(list_tokens_url, json=(), headers=token_header) as sess:
-            existing_tokens_dict = await sess.json()
+        async with self.bot.httpsession() as session:
+            async with session.post(list_tokens_url, json=(), headers=token_header) as sess:
+                existing_tokens_dict = await sess.json()
 
         for token in existing_tokens_dict['keys']:
 
@@ -240,12 +235,14 @@ class ApiCall(object):
                 # and to prevent hitting the 10 token limit
                 token_id = token['id']
                 data = {'id': token_id}
-                async with self._session.post(delete_token_url, json=data, headers=token_header) as sess:
-                    response = await sess.json()
+                async with self.bot.httpsession() as session:
+                    async with session.post(delete_token_url, json=data, headers=token_header) as sess:
+                        response = await sess.json()
 
         # POST request
-        async with self._session.post(create_token_url, json=get_token_data, headers=token_header) as sess:
-            response_dict = await sess.json()
+        async with self.bot.httpsession() as session:
+            async with session.post(create_token_url, json=get_token_data, headers=token_header) as sess:
+                response_dict = await sess.json()
 
         # Supercell is weird, this is how dictionary structure ends up being
         clean_token = response_dict['key']['key']
@@ -310,7 +307,6 @@ class ClashOfClans(ApiCall):
 
     def __init__(self,
                  bot,
-                 connection,
                  endpoint='https://api.clashofclans.com',
                  api_version='v1',
                  extract_items=True):
@@ -323,7 +319,6 @@ class ClashOfClans(ApiCall):
         """
         super(ClashOfClans, self).__init__(
             bot=bot,
-            connection=connection,
             endpoint=endpoint,
             api_version=api_version,
             extract_items=extract_items
