@@ -5,11 +5,11 @@ import asyncpg.exceptions as pgexceptions
 from cogs.utils import checks, db
 
 
-class last_war(db.Table):
+class LastWarTable(db.Table, table_name='last_war'):
     tag = db.Column(db.String())
 
 
-class tag_to_id(db.Table):
+class TagIDTable(db.Table, table_name='tag_to_id'):
     id = db.Column(db.Integer(big=True))
     tag = db.Column(db.String())
 
@@ -220,7 +220,7 @@ class WarAdmin:
         await ctx.message.add_reaction('\u2705')  # green tick reaction --> all ok, all roles added
 
     @war_role.command()
-    async def list(self, ctx):
+    async def show(self, ctx):
         """
         List everyone with the `inWar` role, both in discord and in the database.
         Helpful to find discrepencies and rectify the issue
