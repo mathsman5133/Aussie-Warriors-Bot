@@ -23,7 +23,8 @@ class WarStatsTable(db.Table, table_name='war_stats'):
 class WarStats:
     def __init__(self, bot):
         self.bot = bot
-        self._task = bot.loop.create_task(self.warStatsAutoUpdater())
+        self.tasks = []
+        self.tasks.append(bot.loop.create_task(self.warStatsAutoUpdater()))
 
     LEAGUE_BOT_CHANNEL = 528822099360612352
     CLAN_TAG = '#P0LYJC8C'
@@ -390,7 +391,8 @@ class WarStats:
         return stats
 
     async def warStatsAutoUpdater(self):
-
+        warnings_sent = 0
+        warning_msg = None
         # Infinite loop
         while True:
             # Sleep for 2 mins before querying the API
@@ -402,6 +404,10 @@ class WarStats:
 
             # Check if state exists in current war, (This is a check in case of maintainence)
             if 'state' in currentWar.keys():
+                if warning_msg:
+                    warning_msg = None
+                    warnings_sent = 0
+
                 # Check if we have to update stats && the war has ended
                 # (We can't check for just warEnded because, it will keep updating
                 # for same war till the status changes)
@@ -422,7 +428,7 @@ class WarStats:
                 e = discord.Embed(colour=discord.Colour.red())
                 # You might want to log the error
                 if 'reason' in currentWar.keys():
-                    message_string = re.sub('\d', '*', currentWar['message'])  # message may contain ip. obscure that
+                    message_string = re.sub('\d', '\\*', currentWar['message'])  # message may contain ip. obscure that
                     e.add_field(name="Clash of Clans API Error",
                                 value=f"Reason: {currentWar['reason']}\nMessage: {message_string}")
 
@@ -434,7 +440,16 @@ class WarStats:
                     e.add_field(name="Clash of Clans API Error",
                                 value="Unknown Error")
 
-                await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
+                e.set_footer(text=f'{warnings_sent} warnings sent (Error persisted for ~{warnings_sent*2} minutes)')
+
+                if warning_msg:
+                    warning_msg.edit(embed=e)
+                    warnings_sent += 1
+
+                else:
+                    msg = await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
+                    warning_msg = msg
+                    warnings_sent += 1
 
     # Function to send database to Google sheet
     async def DBtoGoogleSheets(self):
@@ -468,3 +483,8 @@ class WarStats:
 
 def setup(bot):
     bot.add_cog(WarStats(bot))
+
+
+async def teardown(bot):
+    for task in WarStats(bot).tasks:
+        await task.cancel()  # we want to stop the task as we will re-initiate it when we reload
