@@ -83,7 +83,7 @@ class Admin:
         self._last_result = ''
         self.bot.uptime = datetime.datetime.utcnow()
 
-    @commands.command()
+    @commands.command(hidden=True)
     @checks.is_owner()
     async def db_init(self, ctx):
         import os
@@ -261,6 +261,18 @@ class Admin:
         await ctx.message.add_reaction('\u2705')
         await self.bot.logout()
         await self.bot.close()
+
+    @commands.command()
+    @checks.is_owner()
+    async def reconnect(self, ctx):
+        """Logs out and logs back into the bot
+
+        [Owner only command]
+        """
+        await self.bot.logout()
+        await self.bot.start(token=self.bot.loaded['bottoken'])
+        await ctx.message.add_reaction('\u2705')
+
 
     @commands.command()
     @checks.is_owner()
