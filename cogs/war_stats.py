@@ -23,8 +23,7 @@ class WarStatsTable(db.Table, table_name='war_stats'):
 class WarStats:
     def __init__(self, bot):
         self.bot = bot
-        self.tasks = []
-        self.tasks.append(bot.loop.create_task(self.warStatsAutoUpdater()))
+        self.stats_updater_task = bot.loop.create_task(self.warStatsAutoUpdater())
 
     LEAGUE_BOT_CHANNEL = 528822099360612352
     CLAN_TAG = '#P0LYJC8C'
@@ -394,62 +393,69 @@ class WarStats:
         warnings_sent = 0
         warning_msg = None
         # Infinite loop
-        while True:
-            # Sleep for 2 mins before querying the API
+        try:
+            while not self.bot.is_closed():
+                # Sleep for 2 mins before querying the API
 
-            await asyncio.sleep(120)
+                await asyncio.sleep(120)
 
-            # Query to get details for current war
-            currentWar = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
+                # Query to get details for current war
+                currentWar = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
 
-            # Check if state exists in current war, (This is a check in case of maintainence)
-            if 'state' in currentWar.keys():
-                if warning_msg:
-                    warning_msg = None
-                    warnings_sent = 0
+                # Check if state exists in current war, (This is a check in case of maintainence)
+                if 'state' in currentWar.keys():
+                    if warning_msg:
+                        warning_msg = None
+                        warnings_sent = 0
 
-                # Check if we have to update stats && the war has ended
-                # (We can't check for just warEnded because, it will keep updating
-                # for same war till the status changes)
+                    # Check if we have to update stats && the war has ended
+                    # (We can't check for just warEnded because, it will keep updating
+                    # for same war till the status changes)
 
-                if self.bot.update_stats == 'true':
-                    if currentWar['state'] == 'warEnded':
-                        await self.calculateWarStats()
+                    if self.bot.update_stats == 'true':
+                        if currentWar['state'] == 'warEnded':
+                            await self.calculateWarStats()
+                            continue
+                    # In case updateStats is 'false' (i.e last war ended and it's stats were updated,
+                    #  so we need to check for next war, once we get a match, we make updateStats 'true')
+                    elif currentWar['state'] in ['preparation', 'inWar']:
+                        self.bot.update_stats = 'true'
+                        # Write the value of updateStats in file
+                        self.bot.loaded['updateStats'] = 'true'
+                        await self.bot.save_json()
                         continue
-                # In case updateStats is 'false' (i.e last war ended and it's stats were updated,
-                #  so we need to check for next war, once we get a match, we make updateStats 'true')
-                elif currentWar['state'] in ['preparation', 'inWar']:
-                    self.bot.update_stats = 'true'
-                    # Write the value of updateStats in file
-                    self.bot.loaded['updateStats'] = 'true'
-                    await self.bot.save_json()
-                    continue
-            else:
-                e = discord.Embed(colour=discord.Colour.red())
-                # You might want to log the error
-                if 'reason' in currentWar.keys():
-                    message_string = re.sub('\d', '\\*', currentWar['message'])  # message may contain ip. obscure that
-                    e.add_field(name="Clash of Clans API Error",
-                                value=f"Reason: {currentWar['reason']}\nMessage: {message_string}")
-
-                elif not currentWar:
-                    e.add_field(name="Clash of Clans API Error",
-                                value="The request returned `None`\nIs it an incorrect token?")
-
                 else:
-                    e.add_field(name="Clash of Clans API Error",
-                                value="Unknown Error")
+                    e = discord.Embed(colour=discord.Colour.red())
+                    # You might want to log the error
+                    if 'reason' in currentWar.keys():
+                        message_string = re.sub('\d', '\\*', currentWar['message'])  # message may contain ip. obscure that
+                        e.add_field(name="Clash of Clans API Error",
+                                    value=f"Reason: {currentWar['reason']}\nMessage: {message_string}")
 
-                e.set_footer(text=f'{warnings_sent} warnings sent (Error persisted for ~{warnings_sent*2} minutes)')
+                    elif not currentWar:
+                        e.add_field(name="Clash of Clans API Error",
+                                    value="The request returned `None`\nIs it an incorrect token?")
 
-                if warning_msg:
-                    warning_msg.edit(embed=e)
-                    warnings_sent += 1
+                    else:
+                        e.add_field(name="Clash of Clans API Error",
+                                    value="Unknown Error")
 
-                else:
-                    msg = await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
-                    warning_msg = msg
-                    warnings_sent += 1
+                    e.set_footer(text=f'{warnings_sent} warnings sent (Error persisted for ~{warnings_sent*2} minutes)')
+
+                    if warning_msg:
+                        warning_msg.edit(embed=e)
+                        warnings_sent += 1
+
+                    else:
+                        msg = await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
+                        warning_msg = msg
+                        warnings_sent += 1
+
+        except asyncio.CancelledError:
+            pass
+        except (OSError, discord.ConnectionClosed):
+            self.stats_updater_task.cancel()
+            self.stats_updater_task = self.bot.loop.create_task(self.warStatsAutoUpdater())
 
     # Function to send database to Google sheet
     async def DBtoGoogleSheets(self):
@@ -486,5 +492,7 @@ def setup(bot):
 
 
 async def teardown(bot):
-    for task in WarStats(bot).tasks:
-        await task.cancel()  # we want to stop the task as we will re-initiate it when we reload
+    wsclass = WarStats(bot)
+
+    # lets cancel the tasks now as we will reitiniate if reload cog. else we don't want them continuing anyway
+    await wsclass.stats_updater_task.cancel()
