@@ -127,7 +127,7 @@ class ApiCall(object):
 
         url = build_url(self.endpoint, self.api_version, self.uri_parts)
 
-        async with self.bot.httpsession() as session:
+        async with (await self.bot.httpsession()) as session:
             async with session.request(method, url, headers=self.build_headers()) as r:
                 data = await json_or_text(r)
 
@@ -205,7 +205,7 @@ class ApiCall(object):
         login_headers = {'content-type': 'application/json'}
 
         # Start a session, in which we will be making request to log in and to generate new Token
-        async with self.bot.httpsession() as session:
+        async with (await self.bot.httpsession()) as session:
             async with session.post(coc_api_login_url, json=login_data, headers=login_headers) as sess:
                 response_dict = await sess.json()
                 session = sess.cookies['session']
@@ -221,7 +221,7 @@ class ApiCall(object):
                         'content-type': 'application/json'}
 
         # Get list of existing keys
-        async with self.bot.httpsession() as session:
+        async with (await self.bot.httpsession()) as session:
             async with session.post(list_tokens_url, json=(), headers=token_header) as sess:
                 existing_tokens_dict = await sess.json()
 
@@ -235,12 +235,12 @@ class ApiCall(object):
                 # and to prevent hitting the 10 token limit
                 token_id = token['id']
                 data = {'id': token_id}
-                async with self.bot.httpsession() as session:
+                async with (await self.bot.httpsession()) as session:
                     async with session.post(delete_token_url, json=data, headers=token_header) as sess:
                         response = await sess.json()
 
         # POST request
-        async with self.bot.httpsession() as session:
+        async with (await self.bot.httpsession()) as session:
             async with session.post(create_token_url, json=get_token_data, headers=token_header) as sess:
                 response_dict = await sess.json()
 
