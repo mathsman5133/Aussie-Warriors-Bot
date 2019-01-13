@@ -397,7 +397,7 @@ class WarStats:
             while not self.bot.is_closed():
                 # Sleep for 2 mins before querying the API
 
-                await asyncio.sleep(120)
+                await asyncio.sleep(10)
 
                 # Query to get details for current war
                 currentWar = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
