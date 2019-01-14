@@ -3,7 +3,7 @@ from collections import Counter
 
 from discord.ext import commands
 
-from cogs.utils import checks
+from cogs.utils import checks, db
 from cogs.utils.help import HelpPaginator
 
 import io
@@ -11,6 +11,25 @@ import textwrap
 import traceback
 import datetime
 import discord
+
+
+class Commands(db.Table):
+    id = db.PrimaryKeyColumn()
+
+    guild_id = db.Column(db.Integer(big=True), index=True)
+    channel_id = db.Column(db.Integer(big=True))
+    author_id = db.Column(db.Integer(big=True), index=True)
+    used = db.Column(db.Datetime)
+    prefix = db.Column(db.String)
+    command = db.Column(db.String, index=True)
+
+
+class Tasks(db.Table):
+    id = db.PrimaryKeyColumn()
+
+    task_name = db.Column(db.String)
+    used = db.Column(db.Datetime)
+    completed = db.Column(db.Boolean)
 
 
 class TabularData:
@@ -82,6 +101,37 @@ class Admin:
         self.bot = bot
         self._last_result = ''
         self.bot.uptime = datetime.datetime.utcnow()
+
+    async def on_command(self, ctx):
+        command = ctx.command.qualified_name
+        self.bot.command_stats[command] += 1
+        message = ctx.message
+        if ctx.guild is None:
+            guild_id = None
+        else:
+            guild_id = ctx.guild.id
+
+        query = """INSERT INTO commands (guild_id, channel_id, author_id, used, prefix, command)
+                           VALUES ($1, $2, $3, $4, $5, $6)
+                """
+
+        await self.bot.pool.execute(query, guild_id, ctx.channel.id, ctx.author.id, message.created_at, ctx.prefix,
+                                    command)
+
+    async def on_socket_response(self, msg):
+        self.bot.socket_stats[msg.get('t')] += 1
+
+    async def task_stats(self, task_name, completed):
+        self.bot.task_stats[task_name] += 1
+
+        if completed:
+            self.bot.tasks_completed[task_name] += 1
+
+        now = datetime.datetime.utcnow()
+        query = """INSERT INTO tasks (task_name, used, completed)
+                    VALUES ($1, $2, $3)"""
+
+        await self.bot.pool.execute(query, task_name, now, completed)
 
     @commands.command(hidden=True)
     @checks.is_owner()
@@ -431,6 +481,33 @@ class Admin:
         cpm = total / minutes
         await ctx.send(f'{total} socket events observed ({cpm:.2f}/minute):\n{self.bot.socket_stats}')
 
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def commandstats(self, ctx, limit=20):
+        """Shows command stats.
+        Use a negative number for bottom instead of top.
+        This is only for the current session.
+        """
+        counter = self.bot.command_stats
+        width = len(max(counter, key=len))
+        total = sum(counter.values())
+
+        if limit > 0:
+            common = counter.most_common(limit)
+        else:
+            common = counter.most_common()[limit:]
+
+        output = '\n'.join(f'{k:<{width}}: {c}' for k, c in common)
+
+        await ctx.send(f'```\n{output}\n```')
+
+    @commands.command()
+    async def taskstats(self, ctx):
+        """Tells you how many tasks (checking for war status ended/donations etc) have been run
+        """
+        await ctx.send(f'Total tasks run since uptime: \n{self.bot.task_stats}'
+                       f'\nTotal tasks actually completed: \n{self.bot.tasks_completed}')
+
     @commands.command()
     async def uptime(self, ctx):
         """Returns how long the bot has been running for
@@ -509,8 +586,17 @@ class Admin:
 
 
 def setup(bot):
+    if not hasattr(bot, 'command_stats'):
+        bot.command_stats = Counter()
+
     if not hasattr(bot, 'socket_stats'):
         bot.socket_stats = Counter()
+
+    if not hasattr(bot, 'task_stats'):
+        bot.task_stats = Counter()
+
+    if not hasattr(bot, 'tasks_completed'):
+        bot.tasks_completed = Counter()
 
     bot.add_cog(Admin(bot))
 

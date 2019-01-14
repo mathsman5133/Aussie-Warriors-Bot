@@ -1,6 +1,6 @@
 from discord.ext import commands
 from cogs.utils import checks, paginator, db
-from cogs.admin import TabularData
+from cogs.admin import TabularData, Admin
 
 import asyncio
 import discord
@@ -395,9 +395,10 @@ class WarStats:
         # Infinite loop
         try:
             while not self.bot.is_closed():
+                await Admin(self.bot).task_stats('war_stats', False)
                 # Sleep for 2 mins before querying the API
 
-                await asyncio.sleep(10)
+                await asyncio.sleep(60)
 
                 # Query to get details for current war
                 currentWar = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
@@ -415,6 +416,7 @@ class WarStats:
                     if self.bot.update_stats == 'true':
                         if currentWar['state'] == 'warEnded':
                             await self.calculateWarStats()
+                            await Admin(self.bot).task_stats('war_stats', True)
                             continue
                     # In case updateStats is 'false' (i.e last war ended and it's stats were updated,
                     #  so we need to check for next war, once we get a match, we make updateStats 'true')

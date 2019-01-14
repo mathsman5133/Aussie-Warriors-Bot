@@ -7,6 +7,7 @@ from discord.ext import commands
 
 from cogs.utils import checks, db
 from cogs.donations import ShowDonations
+from cogs.admin import Admin
 
 
 class Season(db.Table):
@@ -235,6 +236,8 @@ class Update:
     async def auto_daily_updates(self):
         try:
             while not self.bot.is_closed():
+                await Admin(self.bot).task_stats('daily_update', False)
+
                 now = datetime.datetime.utcnow()
 
                 if now.hour == 6:  # if its 6oc
@@ -242,6 +245,7 @@ class Update:
                     await self.update()
                     await self.refresh_avg()
                     await (self.bot.get_channel(self.bot.info_channel_id)).send('auto-daily-update done')
+                    await Admin(self.bot).task_stats('daily_update', True)
 
                 await asyncio.sleep(3600)  # sleep for an hour
 
@@ -254,6 +258,7 @@ class Update:
     async def auto_monthly_update(self):
         try:
             while not self.bot.is_closed():
+                await Admin(self.bot).task_stats('monthly_update', False)
                 # there is probably a more elegant way of finding the last monday of the month date
                 cal = calendar.Calendar(0)
                 month = cal.monthdatescalendar(datetime.date.today().year, datetime.date.today().month)
@@ -267,6 +272,8 @@ class Update:
                     await self.refresh_avg()
                     await (self.bot.get_channel(self.bot.info_channel_id)).send('auto-monthly-update done')
 
+                    await Admin(self.bot).task_stats('monthly_update', True)
+
                 await asyncio.sleep(86399)  # sleep for a second less than a day
         except asyncio.CancelledError:
             pass
@@ -277,11 +284,15 @@ class Update:
     async def auto_send_pings(self):
         try:
             while not self.bot.is_closed():
+                await Admin(self.bot).task_stats('send_pings', False)
+
                 show_donations_class = ShowDonations(self.bot)
                 today = datetime.datetime.utcnow()
 
                 if today.hour == 7 and today.weekday() == 1:  # if its 7oc on tuesday
                     await show_donations_class.send_donation_pings()
+                    await Admin(self.bot).task_stats('send_pings', True)
+
                 await asyncio.sleep(3600)  # sleep for an hour
 
         except asyncio.CancelledError:
