@@ -347,7 +347,8 @@ class Admin:
             'author': ctx.author,
             'guild': ctx.guild,
             'message': ctx.message,
-            '_': self._last_result
+            '_': self._last_result,
+            'self': self
         }
 
         env.update(globals())
