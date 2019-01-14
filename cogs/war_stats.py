@@ -493,8 +493,11 @@ def setup(bot):
     bot.add_cog(WarStats(bot))
 
 
-async def teardown(bot):
+def teardown(bot):
     wsclass = WarStats(bot)
 
+    async def do():
+        await wsclass.stats_updater_task.cancel()
+
+    asyncio.get_event_loop().run_in_executor(None, do)
     # lets cancel the tasks now as we will reitiniate if reload cog. else we don't want them continuing anyway
-    await wsclass.stats_updater_task.cancel()

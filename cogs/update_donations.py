@@ -306,11 +306,15 @@ def setup(bot):
     bot.add_cog(Update(bot))
 
 
-async def teardown(bot):
+def teardown(bot):
     updclass = Update(bot)
 
     # lets cancel the tasks now as we will reitiniate if reload cog. else we don't want them going anyway
-    await updclass.auto_daily_task.cancel()
-    await updclass.auto_monthly_task.cancel()
-    await updclass.auto_pings_task.cancel()
+    async def do():
+        await updclass.auto_daily_task.cancel()
+        await updclass.auto_monthly_task.cancel()
+        await updclass.auto_pings_task.cancel()
+
+    asyncio.get_event_loop().run_in_executor(None, do)
+
 
