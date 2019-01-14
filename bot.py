@@ -4,10 +4,8 @@ import json
 import os
 import functools
 import asyncio
-import click
 
 import aiohttp
-import socket
 
 import git
 
@@ -30,27 +28,6 @@ initial_extensions = [
 
 with open(json_location) as creds:
     creds = json.load(creds)
-
-
-def run_bot():
-    loop = asyncio.get_event_loop()
-
-    try:
-        # configure the database connection
-        pool = loop.run_until_complete(Table.create_pool(creds['postgresql'], command_timeout=60))
-    except Exception as e:
-        click.echo('Could not set up PostgreSQL. Exiting.', file=sys.stderr)
-        return
-
-    bot = AWBot()
-    bot.pool = pool  # add db as attribute
-    bot.run()  # run bot
-
-    async def close_http():
-        await bot.http_session.close()  # close aiohttp session when bot finished running
-
-    thing = functools.partial(close_http)
-    loop.run_in_executor(None, thing)
 
 
 class AWBot(commands.Bot):
@@ -135,21 +112,24 @@ class AWBot(commands.Bot):
         """
         print(f'Ready: {self.user} (ID: {self.user.id})')
 
-    async def httpsession(self):
-        http_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector
-                                             (resolver=aiohttp.AsyncResolver,
-                                              family=socket.AF_INET))
-        return http_session
-
-    def run(self):
-        # run the bot
-        try:
-            super().run(creds['bottoken'])
-        except Exception as e:
-            print(e)
+    def httpsession(self):
+        return aiohttp.ClientSession(loop=asyncio.get_event_loop())
 
 
 if __name__ == '__main__':
-    run_bot()
+    loop = asyncio.get_event_loop()
+
+    try:
+        # configure the database connection
+        pool = loop.run_until_complete(Table.create_pool(creds['postgresql'], command_timeout=60))
+
+        bot = AWBot()
+        bot.pool = pool  # add db as attribute
+        bot.run(creds['bottoken'])  # run bot
+
+    except Exception as e:
+        print('Could not set up PostgreSQL. Exiting.')
+
+
 
 
