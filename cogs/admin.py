@@ -481,8 +481,7 @@ class Admin:
         cpm = total / minutes
         await ctx.send(f'{total} socket events observed ({cpm:.2f}/minute):\n{self.bot.socket_stats}')
 
-    @commands.command(hidden=True)
-    @commands.is_owner()
+    @commands.command()
     async def commandstats(self, ctx, limit=20):
         """Shows command stats.
         Use a negative number for bottom instead of top.
