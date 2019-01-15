@@ -27,9 +27,9 @@ class Commands(db.Table):
 class Tasks(db.Table):
     id = db.PrimaryKeyColumn()
 
-    task_name = db.Column(db.String)
+    task_name = db.Column(db.String, index=True)
     used = db.Column(db.Datetime)
-    completed = db.Column(db.Boolean)
+    completed = db.Column(db.Boolean, index=True)
 
 
 class TabularData:
