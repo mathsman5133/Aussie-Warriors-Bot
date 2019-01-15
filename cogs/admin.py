@@ -198,11 +198,12 @@ class Admin:
         output, error = process.communicate()
 
         e = discord.Embed()
-        e.description = output
+        e.description = str(output, 'utf-8')
 
         if error:
             e.colour = discord.Colour.red()
-            e.add_field(name="Error:", value=error)
+            e.add_field(name="Error:", value=str(error, 'utf-8'))
+
         else:
             e.colour = discord.Colour.green()
 
