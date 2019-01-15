@@ -298,7 +298,7 @@ class Update:
         except asyncio.CancelledError:
             pass
         except (OSError, discord.ConnectionClosed):
-            self.auto_daily_task.cancel()
+            await self.auto_daily_task.cancel()
             self.auto_daily_task = self.bot.loop.create_task(self.auto_daily_updates())
 
 
@@ -315,6 +315,6 @@ def teardown(bot):
         await updclass.auto_monthly_task.cancel()
         await updclass.auto_pings_task.cancel()
 
-    asyncio.get_event_loop().run_in_executor(None, do)
+    asyncio.get_event_loop().run_until_complete(do)
 
 
