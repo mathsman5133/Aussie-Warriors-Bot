@@ -132,9 +132,9 @@ class ShowDonations:
         dump = await self.bot.pool.fetch(query, True)
 
         players = '\n'.join(f'<@{userid}>: `{avgdon} donations`'
-                            for (userid, avgdon) in enumerate(dump) or 'No Accounts')
+                            for (index, (userid, avgdon)) in enumerate(dump) or 'No Accounts')
 
-        ping = ''.join(f'<@{userid}>, ' for userid in dump)
+        ping = ''.join(f'<@{row[0]}>, ' for row in dump)
 
         donations_by_today = await self.donations_by_today()
 
