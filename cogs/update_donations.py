@@ -13,7 +13,7 @@ from cogs.admin import Admin
 class Season(db.Table):
     id = db.PrimaryKeyColumn()
 
-    toggle = db.Column(db.Boolean())
+    toggle = db.Column(db.Boolean(), index=True)
     donationsbytoday = db.Column(db.Integer)
     start_date = db.Column(db.Integer)
 
@@ -21,9 +21,9 @@ class Season(db.Table):
 class Averages(db.Table):
     id = db.PrimaryKeyColumn()
 
-    userid = db.Column(db.Integer(big=True))
+    userid = db.Column(db.Integer(big=True), index=True)
     average = db.Column(db.Numeric())
-    warning = db.Column(db.Boolean())
+    warning = db.Column(db.Boolean(), index=True)
 
 
 class Update:

@@ -9,9 +9,9 @@ import asyncpg.exceptions as pgexceptions
 class Claims(db.Table):
     id = db.PrimaryKeyColumn()
 
-    userid = db.Column(db.Integer(big=True))
-    ign = db.Column(db.String())
-    tag = db.Column(db.String())
+    userid = db.Column(db.Integer(big=True), index=True)
+    ign = db.Column(db.String(), index=True)
+    tag = db.Column(db.String(), index=True)
     starting_donations = db.Column(db.Integer())
     current_donations = db.Column(db.Integer())
     difference = db.Column(db.Numeric())

@@ -11,11 +11,11 @@ import datetime
 
 
 class WarStatsTable(db.Table, table_name='war_stats'):
-    war_no = db.Column(db.Integer())
+    war_no = db.Column(db.Integer(), index=True)
 
     name = db.Column(db.String())
     tag = db.Column(db.String())
-    th = db.Column(db.Integer())
+    th = db.Column(db.Integer(), index=True)
     hitrate = db.Column(db.String())
     defenserate = db.Column(db.String())
 
