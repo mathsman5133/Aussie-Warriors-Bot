@@ -129,7 +129,7 @@ class ShowDonations:
 
     async def send_donation_pings(self):
         query = "SELECT userid, average FROM averages WHERE warning = $1"
-        dump = await self.bot.fetch(query, True)
+        dump = await self.bot.pool.fetch(query, True)
 
         players = '\n'.join(f'<@{userid}>: `{avgdon} donations`'
                             for (userid, avgdon) in enumerate(dump) or 'No Accounts')
