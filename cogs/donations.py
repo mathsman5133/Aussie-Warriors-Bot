@@ -136,13 +136,15 @@ class ShowDonations:
 
         ping = ''.join(f'<@{userid}>, ' for userid in dump)
 
+        donations_by_today = await self.donations_by_today()
+
         e = discord.Embed(colour=discord.Colour.blue())
         e.title = 'Average Donation List - Warnings only'
         e.description = players
         await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
         await (self.bot.get_channel(self.bot.info_channel_id)).send(
             f'{ping}\nThe average donations of all your accounts currently have '
-            f'less than the required: {str(self.donations_by_today())} troop space by today. '
+            f'less than the required: {donations_by_today} troop space by today. '
             f'\nPlease find your IGN above and donate some troops! '
             f'\nIf you want to check your donations, please type `don` and `avg` in <#462931331308060673>. ')
         eh = discord.Embed(colour=9546812)

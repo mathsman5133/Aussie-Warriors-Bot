@@ -301,6 +301,20 @@ class Update:
             await self.auto_daily_task.cancel()
             self.auto_daily_task = self.bot.loop.create_task(self.auto_daily_updates())
 
+    @commands.command()
+    async def test(self, ctx):
+        await Admin(self.bot).task_stats('send_pings', False)
+
+        show_donations_class = ShowDonations(self.bot)
+        today = datetime.datetime.now()
+
+        if today.hour == 10 and today.weekday() == 2:  # if its 7oc on tuesday
+            await show_donations_class.send_donation_pings()
+            await Admin(self.bot).task_stats('send_pings', True)
+
+        print('done')
+        await asyncio.sleep(3600)  # sleep for an hour
+
 
 def setup(bot):
     bot.add_cog(Update(bot))
