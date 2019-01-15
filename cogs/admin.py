@@ -101,7 +101,6 @@ class Admin:
     def __init__(self, bot):
         self.bot = bot
         self._last_result = ''
-        self.bot.uptime = datetime.datetime.utcnow()
 
     async def on_command(self, ctx):
         command = ctx.command.qualified_name
