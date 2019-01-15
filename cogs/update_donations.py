@@ -4,6 +4,7 @@ import asyncio
 
 import discord
 from discord.ext import commands
+import pytz
 
 from cogs.utils import checks, db
 from cogs.donations import ShowDonations
@@ -287,7 +288,7 @@ class Update:
                 await Admin(self.bot).task_stats('send_pings', False)
 
                 show_donations_class = ShowDonations(self.bot)
-                today = datetime.datetime.now()
+                today = datetime.datetime.now(pytz.timezone('Australia/Sydney'))
 
                 if today.hour == 10 and today.weekday() == 2:  # if its 7oc on tuesday
                     await show_donations_class.send_donation_pings()
