@@ -4,6 +4,7 @@ import json
 import os
 import functools
 import asyncio
+import datetime
 
 import aiohttp
 
@@ -64,6 +65,7 @@ class AWBot(commands.Bot):
         ]
         self.AW_CLAN_TAG = '#P0LYJC8C'
         self.loaded_extensions = initial_extensions  # for our reload_all command
+        self.uptime = datetime.datetime.utcnow()
 
     async def on_message(self, message):
         if message.author.bot:
@@ -128,6 +130,7 @@ if __name__ == '__main__':
         bot.run(creds['bottoken'])  # run bot
 
     except Exception as e:
+        print(e)
         print('Could not set up PostgreSQL. Exiting.')
 
 
