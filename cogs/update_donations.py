@@ -289,7 +289,7 @@ class Update:
                 show_donations_class = ShowDonations(self.bot)
                 today = datetime.datetime.utcnow()
 
-                if today.hour == 8 and today.weekday() == 1:  # if its 7oc on tuesday
+                if today.hour == 18 and today.weekday() == 1:  # if its 7oc on tuesday
                     await show_donations_class.send_donation_pings()
                     await Admin(self.bot).task_stats('send_pings', True)
 
