@@ -11,6 +11,7 @@ import textwrap
 import traceback
 import datetime
 import discord
+import subprocess
 
 
 class Commands(db.Table):
@@ -186,6 +187,26 @@ class Admin:
 
                     await ctx.db.execute(query, user_id, ign, tag, starting_donations, current_donations,
                                          difference, clan, exempt)
+
+    @commands.command()
+    @checks.is_owner()
+    async def bash(self, ctx, *, cmd):
+        """Run a bash command from within the bot
+        """
+
+        process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+        output, error = process.communicate()
+
+        e = discord.Embed()
+        e.description = f'```py\n{output}\n```'
+
+        if error:
+            e.colour = discord.Colour.red()
+            e.add_field(name="Error:", value=f'```py\n{error}\n```')
+        else:
+            e.colour = discord.Colour.green()
+
+        await ctx.send(embed=e)
 
     @commands.command()
     async def ping(self, ctx):
