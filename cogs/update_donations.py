@@ -294,7 +294,7 @@ class Update:
                     await show_donations_class.send_donation_pings()
                     await Admin(self.bot).task_stats('send_pings', True)
 
-                await asyncio.sleep(3600)  # sleep for an hour
+                await asyncio.sleep(600)  # sleep for an hour
 
         except asyncio.CancelledError:
             pass
