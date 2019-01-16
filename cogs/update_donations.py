@@ -290,7 +290,7 @@ class Update:
                 show_donations_class = ShowDonations(self.bot)
                 today = datetime.datetime.now(pytz.timezone('Australia/Sydney'))
 
-                if today.hour == 10 and today.weekday() == 2:  # if its 7oc on tuesday
+                if today.hour == 11 and today.weekday() == 2:  # if its 7oc on tuesday
                     await show_donations_class.send_donation_pings()
                     await Admin(self.bot).task_stats('send_pings', True)
 
