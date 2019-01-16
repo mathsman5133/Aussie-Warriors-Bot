@@ -143,7 +143,7 @@ class ShowDonations:
         e.description = players
         await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
         await (self.bot.get_channel(self.bot.info_channel_id)).send(
-            f'{ping}\nThe average donations of all your accounts currently have '
+            f'{ping}\nThe average donations of all your accounts in AW/A4W currently have '
             f'less than the required: {donations_by_today} troop space by today. '
             f'\nPlease find your IGN above and donate some troops! '
             f'\nIf you want to check your donations, please type `don` and `avg` in <#462931331308060673>. ')
@@ -152,10 +152,10 @@ class ShowDonations:
                      value='As per <#390046705023713280>, '
                            'the required donations is 400 per month, for both clans. '
                            'This equates to 100 per week, or roughly 13.3 per day. \n\n '
-                           'The bot will ping people whom have an average of all accounts'
-                           'less than the required donations '
-                           'for that day of the month once a week, at approx. Tuesday 5pm EST, '
-                           'or Wednesday 7am AEST. \n\nIf any messages have been sent in error, '
+                           'The bot records donations of all accounts in AW or A4W and, '
+                           'will take an average of donations of all accounts in clan. '
+                           'If your average is less than required, this will warn you at approx. Tuesday 5pm EST, '
+                           'or Wednesday 7am AEST weekly.\n\nIf any messages have been sent in error, '
                            'or something isnt working, please ping <@230214242618441728>')
         await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=eh)
 
