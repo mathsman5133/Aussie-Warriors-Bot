@@ -146,6 +146,9 @@ class Pages:
         to_delete.append(await self.channel.send('What page do you want to go to?'))
 
         def message_check(m):
+            if m.author.id in self.bot.owners:
+                return True
+
             return m.author == self.author and \
                    self.channel == m.channel and \
                    m.content.isdigit()
@@ -195,6 +198,9 @@ class Pages:
         self.paginating = False
 
     def react_check(self, reaction, user):
+        if user.id in self.bot.owners:
+            return True
+
         if user is None or user.id != self.author.id:
             return False
 

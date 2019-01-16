@@ -153,6 +153,9 @@ class MsgPag:
         self.paginating = False
 
     def react_check(self, reaction, user):
+        if user.id in self.bot.owners:
+            return True
+
         if (user is None) or (user.id != self.author.id):
             return False
 
@@ -330,6 +333,9 @@ class EmbedPag:
         self.paginating = False
 
     def react_check(self, reaction, user):
+        if user.id in self.bot.owners:
+            return True
+
         if user is None or user.id != self.author.id:
             return False
 
