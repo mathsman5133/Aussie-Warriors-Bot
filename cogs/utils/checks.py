@@ -42,7 +42,7 @@ def manage_server():
         if not ctx.guild:
             return False
 
-        return ctx.author.guild_permissions.manage_server
+        return ctx.author.guild_permissions.manage_guild
 
     return commands.check(pred)
 
