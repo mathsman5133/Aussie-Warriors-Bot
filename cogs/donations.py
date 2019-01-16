@@ -7,6 +7,7 @@ from discord.ext import commands
 class ShowDonations:
     def __init__(self, bot):
         self.bot = bot
+        self.DONATION_PING_CHANNEL_ID = 462205081945899008
 
     async def __error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
@@ -141,8 +142,8 @@ class ShowDonations:
         e = discord.Embed(colour=discord.Colour.blue())
         e.title = 'Average Donation List - Warnings only'
         e.description = players
-        await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
-        await (self.bot.get_channel(self.bot.info_channel_id)).send(
+        await (self.bot.get_channel(self.DONATION_PING_CHANNEL_ID)).send(embed=e)
+        await (self.bot.get_channel(self.DONATION_PING_CHANNEL_ID)).send(
             f'{ping}\nThe average donations of all your accounts in AW/A4W currently have '
             f'less than the required: {donations_by_today} troop space by today. '
             f'\nPlease find your IGN above and donate some troops! '
@@ -157,7 +158,7 @@ class ShowDonations:
                            'If your average is less than required, this will warn you at approx. Tuesday 5pm EST, '
                            'or Wednesday 7am AEST weekly.\n\nIf any messages have been sent in error, '
                            'or something isnt working, please ping <@230214242618441728>')
-        await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=eh)
+        await (self.bot.get_channel(self.DONATION_PING_CHANNEL_ID)).send(embed=eh)
 
 
 def setup(bot):
