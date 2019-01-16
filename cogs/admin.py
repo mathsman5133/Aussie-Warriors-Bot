@@ -2,6 +2,7 @@ from contextlib import redirect_stdout
 from collections import Counter
 
 from discord.ext import commands
+from typing import Union
 
 from cogs.utils import checks, db
 from cogs.utils.help import HelpPaginator
@@ -12,6 +13,7 @@ import traceback
 import datetime
 import discord
 import subprocess
+import copy
 
 
 class Commands(db.Table):
@@ -603,6 +605,17 @@ class Admin:
 
         # remove `foo`
         return content.strip('` \n')
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def sudo(self, ctx, who: Union[discord.Member, discord.User], *, command: str):
+        """Run a command as another user."""
+        msg = copy.copy(ctx.message)
+        msg.author = who
+        msg.content = ctx.prefix + command
+        new_ctx = await self.bot.get_context(msg)
+        new_ctx.db = ctx.db
+        await self.bot.invoke(new_ctx)
 
 
 def setup(bot):
