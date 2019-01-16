@@ -154,7 +154,10 @@ class MsgPag:
 
     def react_check(self, reaction, user):
         if user.id in self.bot.owners:
-            return True
+            for (emoji, func) in self.reaction_emojis:
+                if reaction.emoji == emoji:
+                    self.match = func
+                    return True
 
         if (user is None) or (user.id != self.author.id):
             return False
@@ -334,7 +337,10 @@ class EmbedPag:
 
     def react_check(self, reaction, user):
         if user.id in self.bot.owners:
-            return True
+            for (emoji, func) in self.reaction_emojis:
+                if reaction.emoji == emoji:
+                    self.match = func
+                    return True
 
         if user is None or user.id != self.author.id:
             return False
