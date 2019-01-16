@@ -46,6 +46,7 @@ class AWBot(commands.Bot):
         self.loaded = creds
 
         self.coc_token = self.loaded['coctoken']
+        self.session = aiohttp.ClientSession(loop=self.loop)
 
         if 'updateStats' in self.loaded.keys():
             self.update_stats = self.loaded['updateStats']
@@ -113,9 +114,6 @@ class AWBot(commands.Bot):
         """Useful for knowing when bot has connected
         """
         print(f'Ready: {self.user} (ID: {self.user.id})')
-
-    def httpsession(self):
-        return aiohttp.ClientSession(loop=asyncio.get_event_loop())
 
 
 if __name__ == '__main__':
