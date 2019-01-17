@@ -33,7 +33,7 @@ class WarAdmin:
         elif isinstance(error, checks.COCError):
             e = discord.Embed(colour=discord.Colour.red())
             e.add_field(name='COC API Error',
-                        value=error.msg)
+                        value=error.msg )
             await ctx.send(embed=e)
 
     @commands.group(name="warrole")
@@ -55,6 +55,7 @@ class WarAdmin:
 
         ids_to_remove, ids_to_give, not_in_db = await self.get_ids(ctx)
 
+        print(ids_to_give, ids_to_remove, not_in_db)
         failed_members_to_give = []
         failed_members_to_remove = []
 
@@ -291,7 +292,7 @@ class WarAdmin:
         # To remove
         if remove:
             sql = f'select ID from tag_to_id where Tag in {remove};'
-            dump = await ctx.db.execute(sql)
+            dump = await ctx.db.fetch(sql)
             idsToRemove = [x[0] for x in dump]
         else:
             idsToRemove = []
