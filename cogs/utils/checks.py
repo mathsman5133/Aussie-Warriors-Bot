@@ -99,6 +99,8 @@ def clan_status(state: list):
             if clash_call['state'] not in state:
                 msg += (f'AW is not currently in the required `{state}` state.\n '
                         'Please try again later')
+            else:
+                return True  # if none of the above occur its all good
 
         elif 'reason' in clash_call.keys():
             message_string = re.sub('\d', '\\*', clash_call['message'])  # message may contain ip. obscure that
