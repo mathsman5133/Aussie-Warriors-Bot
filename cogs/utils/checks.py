@@ -96,7 +96,7 @@ def clan_status(state: list):
         msg = ''
 
         if 'state' in clash_call.keys():
-            if clash_call['state'] not in [state]:
+            if clash_call['state'] not in state:
                 msg += (f'AW is not currently in the required `{state}` state.\n '
                         'Please try again later')
 
