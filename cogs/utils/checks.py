@@ -71,12 +71,12 @@ def mod_commands():
     return commands.check(pred)
 
 
-def restricted_channel(*channel_id):
+def restricted_channel(*channel_ids):
     def pred(ctx):
         if is_owner_pred(ctx):
             return True
 
-        if channel_id in ctx.channel.id:
+        if ctx.channel.id in channel_ids:
             return True
 
         return False
