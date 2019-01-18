@@ -124,7 +124,7 @@ class WarStats:
         await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
 
     @commands.command()
-    @checks.restricted_channel(LEAGUE_BOT_CHANNEL)
+    @checks.restricted_channel(LEAGUE_BOT_CHANNEL, 527373033568993282)
     async def warstats(self, ctx, th: int = None, owner_only_last_x_wars: int=None):
         """Gives you war stats for a max. of 20 wars
 
