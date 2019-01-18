@@ -68,7 +68,6 @@ class WarStats:
         await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
 
     @commands.command()
-    @checks.is_owner()
     async def war_status(self, ctx, tag_or_name: str=None):
         if not tag_or_name:
             tag_or_name = self.bot.AW_CLAN_TAG  # lets set it to AW tag for the lazy
