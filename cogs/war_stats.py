@@ -498,5 +498,5 @@ def teardown(bot):
     async def do():
         await wsclass.stats_updater_task.cancel()
 
-    asyncio.get_event_loop().run_in_executor(None, do)
+    asyncio.get_event_loop().run_until_complete(do)
     # lets cancel the tasks now as we will reitiniate if reload cog. else we don't want them continuing anyway
