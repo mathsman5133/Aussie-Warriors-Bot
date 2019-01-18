@@ -11,51 +11,55 @@ class COCError(commands.CheckFailure):
         return self.msg
 
 
-def is_owner():
-    async def pred(ctx):
-        if ctx.author.id in ctx.bot.owners:
-            return True
+def is_owner_pred(ctx):
+    if ctx.author.id in ctx.bot.owners:
+        return True
 
-        return False
+    return False
+
+
+def is_owner():
+    def pred(ctx):
+        return is_owner_pred(ctx)
 
     return commands.check(pred)
 
 
 def manage_roles():
-    async def pred(ctx):
-        if is_owner():
+    def pred(ctx):
+        if is_owner_pred(ctx):
             return True
 
         if ctx.guild is None:
             return False
 
-        return ctx.author.guild_permissions.manage_roles
+        return ctx.channel.permissions_for(ctx.author).manage_roles
 
     return commands.check(pred)
 
 
 def manage_server():
-    async def pred(ctx):
-        if is_owner():
+    def pred(ctx):
+        if is_owner_pred(ctx):
             return True
 
         if not ctx.guild:
             return False
 
-        return ctx.author.guild_permissions.manage_guild
+        return ctx.channel.permissions_for(ctx.author).manage_guild
 
     return commands.check(pred)
 
 
 def manage_channels():
-    async def pred(ctx):
-        if is_owner():
+    def pred(ctx):
+        if is_owner_pred(ctx):
             return True
 
         if not ctx.guild:
             return False
 
-        return ctx.author.guild_permissions.manage_channels
+        return ctx.channel.permissions_for(ctx.author).manage_channels
 
     return commands.check(pred)
 
@@ -67,12 +71,12 @@ def mod_commands():
     return commands.check(pred)
 
 
-def restricted_channel(channel_id):
+def restricted_channel(*channel_id):
     def pred(ctx):
-        if is_owner():
+        if is_owner_pred(ctx):
             return True
 
-        if channel_id == ctx.channel.id:
+        if channel_id in ctx.channel.id:
             return True
 
         return False
