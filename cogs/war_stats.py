@@ -26,6 +26,7 @@ class WarStats:
         self.stats_updater_task = bot.loop.create_task(self.warStatsAutoUpdater())
 
     LEAGUE_BOT_CHANNEL = 528822099360612352
+    NERD_BOT_ZONE_CHANNEL = 527373033568993282
     CLAN_TAG = '#P0LYJC8C'
 
     async def __error(self, ctx, error):
@@ -124,7 +125,7 @@ class WarStats:
         await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
 
     @commands.command()
-    @checks.restricted_channel(LEAGUE_BOT_CHANNEL, 527373033568993282)
+    @checks.restricted_channel(LEAGUE_BOT_CHANNEL, NERD_BOT_ZONE_CHANNEL)
     async def warstats(self, ctx, th: int = None, owner_only_last_x_wars: int=None):
         """Gives you war stats for a max. of 20 wars
 
