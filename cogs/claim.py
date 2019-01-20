@@ -26,7 +26,7 @@ class Claim:
     async def __error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             e = discord.Embed(colour=discord.Colour.red())
-            e.description = error
+            e.description = error.__str__()
             await ctx.send(embed=e)
 
         elif isinstance(error, commands.MissingRequiredArgument):
@@ -60,10 +60,10 @@ class Claim:
             raise commands.BadArgument(f'{ign} ({tag}) has been claimed by '
                                        f'{member.display_name}#{member.discriminator} ({member.id})')
         if player_tag.startswith('#'):
-            try:
-                cocplayer = await self.bot.coc.players(player_tag).get(self.bot.coc_token)
-            except KeyError:
+            cocplayer = await self.bot.coc.players(player_tag).get(self.bot.coc_token)
+            if 'notFound' in cocplayer.values():
                 raise commands.BadArgument(f'Player tag `{player_tag}` not found!')
+
         else:
             # search aw players for x ign, then search a4w
             aw_members = await self.bot.coc.clans('#P0LYJC8C').members.get(self.bot.coc_token)
