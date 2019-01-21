@@ -9,6 +9,7 @@ import datetime
 import aiohttp
 
 import git
+import traceback
 
 from cogs.utils.cocapi import ClashOfClans
 from cogs.utils.db import Table
@@ -24,7 +25,8 @@ initial_extensions = [
                       'cogs.admin',
                       'cogs.war_admin',
                       'cogs.mod_command_logs',
-                      'cogs.war_stats'
+                      'cogs.war_stats',
+                      'cogs.war_status'
                       ]
 
 with open(json_location) as creds:
@@ -40,6 +42,8 @@ class AWBot(commands.Bot):
             try:
                 self.load_extension(e)  # load cogs
             except Exception as er:
+                exc = ''.join(traceback.format_exception(type(er), er, er.__traceback__, chain=False))
+                print(exc)
                 print(f'Failed to load extension {e}: {er}.', file=sys.stderr)
 
         # our json loaded creds file with tokens
@@ -52,6 +56,14 @@ class AWBot(commands.Bot):
             self.update_stats = self.loaded['updateStats']
         else:
             self.loaded['updateStats'] = 'false'
+            self.update_stats = self.loaded['updateStats']
+            print('No updateStats value found. I have set it to default false')
+
+        if 'sendPings' in self.loaded.keys():
+            self.send_pings = self.loaded['sendPings']
+        else:
+            self.loaded['sendPings'] = 'false'
+            self.send_pings = self.loaded['sendPings']
             print('No updateStats value found. I have set it to default false')
 
         self.coc = ClashOfClans(bot=self)
@@ -103,6 +115,7 @@ class AWBot(commands.Bot):
 
         self.coc_token = self.loaded['coctoken']  # update these as they won't automatically change with json file
         self.update_stats = self.loaded['updateStats']  # ''
+        self.send_pings = self.loaded['sendPings']  # ' '
 
     async def update_coc_token(self, new_token):
         """Update the coc api token in the creds json file

@@ -291,8 +291,9 @@ class Update:
                 today = datetime.datetime.now(pytz.timezone('Australia/Sydney'))
 
                 if today.hour == 7 and today.weekday() == 1:  # if its 7oc on tuesday
-                    await show_donations_class.send_donation_pings()
-                    await Admin(self.bot).task_stats('send_pings', True)
+                    if self.bot.send_pings == 'true':
+                        await show_donations_class.send_donation_pings()
+                        await Admin(self.bot).task_stats('send_pings', True)
 
                 await asyncio.sleep(3600)  # sleep for an hour
 

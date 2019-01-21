@@ -128,6 +128,26 @@ class ShowDonations:
         await self.send_donation_pings()
         await ctx.message.delete()
 
+    @commands.command()
+    @checks.manage_server()
+    async def send_pings_status(self, ctx, true_false: bool = None):
+        """Tells you whether pings are auto-sending, or allows you to change the current status
+        """
+        if not true_false:
+            status = self.bot.loaded['sendPings']  # tell them what status is if not specified
+            e = discord.Embed(description=status)
+            e.colour = discord.Colour.green() if status == 'true' else discord.Colour.red()  # red = false, green = true
+            return await ctx.send(embed=e)  # send and return
+
+        self.bot.mod_commands.append(ctx)  # we don't want to send a mod log if they're just getting status
+
+        true_false = 'true' if true_false else 'false'  # convert that bool to a string true/false
+
+        self.bot.loaded['sendPings'] = true_false
+        await self.bot.save_json()  # save that value in json for persistant storage when bot down
+
+        await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
+
     async def send_donation_pings(self):
         query = "SELECT userid, average FROM averages WHERE warning = $1"
         dump = await self.bot.pool.fetch(query, True)
