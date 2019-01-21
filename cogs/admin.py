@@ -14,6 +14,9 @@ import datetime
 import discord
 import subprocess
 import copy
+import os
+import sys
+import asyncio
 
 
 class Commands(db.Table):
@@ -33,6 +36,19 @@ class Tasks(db.Table):
     task_name = db.Column(db.String, index=True)
     used = db.Column(db.Datetime)
     completed = db.Column(db.Boolean, index=True)
+
+
+async def run_subprocess(cmd, loop=None):
+    try:
+        proc = await asyncio.create_subprocess_shell(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        res = await proc.communicate()
+    except NotImplementedError:
+        loop = loop or asyncio.get_event_loop()
+        proc = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        res = await loop.run_in_executor(None, proc.communicate)
+    return [s.decode('utf8') for s in res]
 
 
 class TabularData:
@@ -195,20 +211,14 @@ class Admin:
         """Run a bash command from within the bot
         """
 
-        process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-        output, error = process.communicate()
-
-        e = discord.Embed()
-        e.description = str(output, 'utf-8')
+        output, error = run_subprocess(cmd)
 
         if error:
-            e.colour = discord.Colour.red()
-            e.add_field(name="Error:", value=str(error, 'utf-8'))
-
+            out = f"stdout:\n{output}\nstderr:\n{error}"
         else:
-            e.colour = discord.Colour.green()
+            out = output
 
-        await ctx.send(embed=e)
+        await ctx.send(f"```{out}```")
 
     @commands.command()
     async def ping(self, ctx):
@@ -326,26 +336,29 @@ class Admin:
 
     @commands.command()
     @checks.is_owner()
-    async def shutdown(self, ctx):
+    async def logout(self, ctx):
         """Logs out of the bot's current session
 
         [Owner only command]
         """
         await ctx.message.add_reaction('\u2705')
         await self.bot.logout()
-        await self.bot.close()
 
     @commands.command()
     @checks.is_owner()
-    async def reconnect(self, ctx):
+    async def restart(self, ctx):
         """Logs out and logs back into the bot
 
         [Owner only command]
         """
-        await self.bot.logout()
-        await self.bot.start(token=self.bot.loaded['bottoken'])
-        await ctx.message.add_reaction('\u2705')
+        os.execve(sys.executable, ['python3.6', 'bot.py'], os.environ)
 
+    @commands.command()
+    @checks.is_owner()
+    async def update_and_restart(self, ctx):
+        run_subprocess("git fetch origin master && git reset --hard FETCH_HEAD")
+        run_subprocess("python3.6 -m pip install --upgrade -r requirements.txt")
+        os.execve(sys.executable, ['python3.6', 'bot.py'], os.environ)
 
     @commands.command()
     @checks.is_owner()
@@ -512,7 +525,6 @@ class Admin:
         """
         counter = self.bot.command_stats
         width = len(max(counter, key=len))
-        total = sum(counter.values())
 
         if limit > 0:
             common = counter.most_common(limit)
