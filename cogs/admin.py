@@ -211,7 +211,7 @@ class Admin:
         """Run a bash command from within the bot
         """
 
-        output, error = run_subprocess(cmd)
+        output, error = await run_subprocess(cmd)
 
         if error:
             out = f"stdout:\n{output}\nstderr:\n{error}"
@@ -356,8 +356,8 @@ class Admin:
     @commands.command()
     @checks.is_owner()
     async def update_and_restart(self, ctx):
-        run_subprocess("git fetch origin master && git reset --hard FETCH_HEAD")
-        run_subprocess("python3.6 -m pip install --upgrade -r requirements.txt")
+        await run_subprocess("git fetch origin master && git reset --hard FETCH_HEAD")
+        await run_subprocess("python3.6 -m pip install --upgrade -r requirements.txt")
         os.execve(sys.executable, ['python3.6', 'bot.py'], os.environ)
 
     @commands.command()
