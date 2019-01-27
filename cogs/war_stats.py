@@ -417,6 +417,7 @@ class WarStats:
                         if currentWar['state'] == 'warEnded':
                             await self.calculateWarStats()
                             await Admin(self.bot).task_stats('war_stats', True)
+                            await (self.bot.get_channel(self.bot.info_channel_id)).send('war-stats-update done')
                             continue
                     # In case updateStats is 'false' (i.e last war ended and it's stats were updated,
                     #  so we need to check for next war, once we get a match, we make updateStats 'true')
@@ -445,7 +446,7 @@ class WarStats:
                     e.set_footer(text=f'{warnings_sent} warnings sent (Error persisted for ~{warnings_sent*2} minutes)')
 
                     if warning_msg:
-                        warning_msg.edit(embed=e)
+                        await warning_msg.edit(embed=e)
                         warnings_sent += 1
 
                     else:
