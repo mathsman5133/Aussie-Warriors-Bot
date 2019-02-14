@@ -13,11 +13,15 @@ class TagIDTable(db.Table, table_name='tag_to_id'):
     id = db.Column(db.Integer(big=True))
     tag = db.Column(db.String())
 
+class RolesCTX(object):
+    pass
+
 
 class WarAdmin:
     def __init__(self, bot):
         self.bot = bot
         self.bot.IN_WAR_ROLE_ID = 526702907127627793
+        self.AW_SERVER_ID = 352298238180851712
         self.CLAN_TAG = '#P0LYJC8C'
 
     async def __error(self, ctx, error):
@@ -52,87 +56,11 @@ class WarAdmin:
 
         Requires `Manage_Roles` permission
         """
-
-        ids_to_remove, ids_to_give, not_in_db = await self.get_ids(ctx)
-
-        print(ids_to_give, ids_to_remove, not_in_db)
-        failed_members_to_give = []
-        failed_members_to_remove = []
-
-        role = ctx.guild.get_role(self.bot.IN_WAR_ROLE_ID)  # get role object
-
-        for user_id in ids_to_remove:
-            member = ctx.guild.get_member(int(user_id))  # get member object
-
-            if not member:
-                failed_members_to_remove.append(user_id)
-                continue
-
-            try:
-                await member.remove_roles(role,
-                                          reason=f"inWar Role Removal (mass): "  # reason for audit log
-                                                 f"{ctx.author.display_name}#{ctx.author.discriminator}"
-                                                 f" ({ctx.author.id})"
-                                          )
-            except (discord.Forbidden, discord.HTTPException):  # possible (discord) errors
-                failed_members_to_remove.append(member)  # for later we will let them know who failed
-
-        for user_id in ids_to_give:
-            member = ctx.guild.get_member(int(user_id))  # get member object
-
-            if not member:
-                failed_members_to_give.append(user_id)
-                continue
-
-            try:
-                await member.add_roles(role,
-                                       reason=f"inWar Role Given (mass): "  # reason for audit log
-                                              f"{ctx.author.display_name}#{ctx.author.discriminator} ({ctx.author.id})"
-                                       )
-            except (discord.Forbidden, discord.HTTPException):  # possible (discord) errors
-                failed_members_to_give.append(member)  # for later we will let them know who failed
-
-        if failed_members_to_remove or failed_members_to_give or not_in_db:
-
-            # format the problem people into a string with 1 person per line
-            not_in_db = '\n'.join(f'{ign} ({tag})'
-                                  for (index, (ign, tag)) in enumerate(not_in_db)) or None
-            role_add = '\n'.join(f'{user.mention}' for user in
-                                 failed_members_to_give if isinstance(user, discord.Member)) or None
-            role_remove = '\n'.join(f'{user.mention}' for user in
-                                    failed_members_to_remove if isinstance(user, discord.Member)) or None
-
-            if role_add:
-                role_add = role_add.join(f'UserID {user_id} - NIS' for user_id in
-                                         failed_members_to_give if not isinstance(user_id, discord.Member))
-            else:
-                role_add = '\n'.join(f'UserID {user_id} - NIS' for user_id in
-                                     failed_members_to_give if not isinstance(user_id, discord.Member)) or None
-
-            if role_remove:
-                role_remove = role_remove.join(f'UserID {user_id} - NIS' for user_id in
-                                               failed_members_to_remove if not isinstance(user_id, discord.Member))
-            else:
-                role_remove = '\n'.join(f'UserID {user_id} - NIS' for user_id in
-                                        failed_members_to_remove if not isinstance(user_id, discord.Member)) or None
-
-            e = discord.Embed(colour=discord.Colour.red())  # we're going to send an error embed --> red colour
-            e.set_author(name="Errors when dealing with the following")
-
-            if not_in_db:
-                e.add_field(name="Members not claimed:", value=not_in_db)  # only include error if there is people on it
-
-            if role_add:
-                e.add_field(name="Failed to give role:", value=role_add)  # same
-
-            if role_remove:
-                e.add_field(name="Failed to remove role:", value=role_remove)   # same
-
-            e.set_footer(text="Please check bot logs for traceback (if applicable)")  # tell them to check bot log
-
-            return await ctx.send(embed=e)
-
-        await ctx.message.add_reaction('\u2705')  # green tick reaction --> all ok, all roles added
+        embed = await self.give_roles(ctx)
+        if embed:
+            await ctx.send(embed=embed)
+        else:
+            await ctx.tick()
 
     @war_role.command()
     async def add(self, ctx, tag_ign: str, member: discord.Member=None):
@@ -260,6 +188,87 @@ class WarAdmin:
 
         await ctx.send(embed=e)
 
+    async def give_roles(self, ctx):
+        ids_to_remove, ids_to_give, not_in_db = await self.get_ids(ctx)
+
+        failed_members_to_give = []
+        failed_members_to_remove = []
+
+        role = ctx.guild.get_role(self.bot.IN_WAR_ROLE_ID)  # get role object
+
+        for user_id in ids_to_remove:
+            member = ctx.guild.get_member(int(user_id))  # get member object
+
+            if not member:
+                failed_members_to_remove.append(user_id)
+                continue
+
+            try:
+                await member.remove_roles(role,
+                                          reason=f"inWar Role Removal (mass): "  # reason for audit log
+                                                 f"{ctx.author.display_name}#{ctx.author.discriminator}"
+                                                 f" ({ctx.author.id})"
+                                          )
+            except (discord.Forbidden, discord.HTTPException):  # possible (discord) errors
+                failed_members_to_remove.append(member)  # for later we will let them know who failed
+
+        for user_id in ids_to_give:
+            member = ctx.guild.get_member(int(user_id))  # get member object
+
+            if not member:
+                failed_members_to_give.append(user_id)
+                continue
+
+            try:
+                await member.add_roles(role,
+                                       reason=f"inWar Role Given (mass): "  # reason for audit log
+                                              f"{ctx.author.display_name}#{ctx.author.discriminator} ({ctx.author.id})"
+                                       )
+            except (discord.Forbidden, discord.HTTPException):  # possible (discord) errors
+                failed_members_to_give.append(member)  # for later we will let them know who failed
+
+        if failed_members_to_remove or failed_members_to_give or not_in_db:
+
+            # format the problem people into a string with 1 person per line
+            not_in_db = '\n'.join(f'{ign} ({tag})'
+                                  for (index, (ign, tag)) in enumerate(not_in_db)) or None
+            role_add = '\n'.join(f'{user.mention}' for user in
+                                 failed_members_to_give if isinstance(user, discord.Member)) or None
+            role_remove = '\n'.join(f'{user.mention}' for user in
+                                    failed_members_to_remove if isinstance(user, discord.Member)) or None
+
+            if role_add:
+                role_add = role_add.join(f'UserID {user_id} - NIS' for user_id in
+                                         failed_members_to_give if not isinstance(user_id, discord.Member))
+            else:
+                role_add = '\n'.join(f'UserID {user_id} - NIS' for user_id in
+                                     failed_members_to_give if not isinstance(user_id, discord.Member)) or None
+
+            if role_remove:
+                role_remove = role_remove.join(f'UserID {user_id} - NIS' for user_id in
+                                               failed_members_to_remove if not isinstance(user_id, discord.Member))
+            else:
+                role_remove = '\n'.join(f'UserID {user_id} - NIS' for user_id in
+                                        failed_members_to_remove if not isinstance(user_id, discord.Member)) or None
+
+            e = discord.Embed(colour=discord.Colour.red())  # we're going to send an error embed --> red colour
+            e.set_author(name="Errors when dealing with the following")
+
+            if not_in_db:
+                e.add_field(name="Members not claimed:", value=not_in_db)  # only include error if there is people on it
+
+            if role_add:
+                e.add_field(name="Failed to give role:", value=role_add)  # same
+
+            if role_remove:
+                e.add_field(name="Failed to remove role:", value=role_remove)  # same
+
+            e.set_footer(text="Please check bot logs for traceback (if applicable)")  # tell them to check bot log
+
+            return e
+
+        return None
+
     async def get_ids(self, ctx):
         '''Takes in the client and connection as argument, returns 1 tuple of 2 lists (remove,add)'''
 
@@ -336,6 +345,14 @@ class WarAdmin:
 
         # If nothing goes wrong return lists
         return idsToRemove, idsToAdd, unclaimed
+
+    async def give_roles_auto(self):
+        ctx = RolesCTX()
+        ctx.db = self.bot.pool
+        ctx.guild = self.bot.get_guild(self.AW_SERVER_ID)
+        ctx.author = ctx.guild.get_member(self.bot.user.id)
+        await self.give_roles(ctx=ctx)
+
 
 
 def setup(bot):

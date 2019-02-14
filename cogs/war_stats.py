@@ -418,6 +418,7 @@ class WarStats:
                             await self.calculateWarStats()
                             await Admin(self.bot).task_stats('war_stats', True)
                             await (self.bot.get_channel(self.bot.info_channel_id)).send('war-stats-update done')
+
                             continue
                     # In case updateStats is 'false' (i.e last war ended and it's stats were updated,
                     #  so we need to check for next war, once we get a match, we make updateStats 'true')
@@ -426,6 +427,10 @@ class WarStats:
                         # Write the value of updateStats in file
                         self.bot.loaded['updateStats'] = 'true'
                         await self.bot.save_json()
+                        cog = self.bot.get_cog('WarAdmin')
+                        await cog.give_roles_auto()
+                        await (self.bot.get_channel(self.bot.info_channel_id)).send('war-roles-auto done')
+
                         continue
                 else:
                     e = discord.Embed(colour=discord.Colour.red())
