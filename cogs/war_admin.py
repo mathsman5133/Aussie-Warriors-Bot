@@ -60,7 +60,7 @@ class WarAdmin:
         if embed:
             await ctx.send(embed=embed)
         else:
-            await ctx.tick()
+            await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
 
     @war_role.command()
     async def add(self, ctx, tag_ign: str, member: discord.Member=None):
