@@ -14,10 +14,18 @@ class WarStatus:
 
     @commands.group()
     async def search(self, ctx):
-        pass
+        """Group - Search and find info about a COC clan by tag or clan name
+        [In beta]
+        """
+        if not ctx.invoked_subcommand:
+            await ctx.show_help('search')
 
     @search.command()
     async def clan(self, ctx, *, tag_or_name: str):
+        """Search + get info about a COC clan by tag or name
+        [In beta]
+        """
+        print('ok')
         clan = await self.search_clans(ctx, tag_or_name)
         war_status = await self.war_status(clan)
         msg = await ctx.send(embed=war_status)
