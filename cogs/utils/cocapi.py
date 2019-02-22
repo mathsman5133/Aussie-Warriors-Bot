@@ -1,11 +1,12 @@
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
+
 
 import json
 import discord
 import requests
 
 
-def build_url(endpoint, api_version, uri_parts):
+def build_url(endpoint, api_version, uri_parts, uri_args={}):
     uri_parts = [str(x) for x in uri_parts]
     # and encoded
     uri_parts = [quote(x) for x in uri_parts]
@@ -14,14 +15,10 @@ def build_url(endpoint, api_version, uri_parts):
     # join parts
     url_to_call = "/".join(all_uri_parts)
 
+    if uri_args:
+        url_to_call = f'{url_to_call}?{urlencode(uri_args)}'
+
     return url_to_call
-
-
-async def json_or_text(response):
-    text = await response.text(encoding='utf-8')
-    if response.headers['content-type'] == 'application/json':
-        return json.loads(text)
-    return json.loads(text)
 
 
 class ApiResponse:
@@ -71,7 +68,7 @@ class ApiCall(object):
     """
 
     def __init__(self, bot, endpoint, api_version,
-                 extract_items=True, uri_parts=None):
+                 extract_items=True, uri_parts=None, uri_args={}):
         """ Construct an ApiCall object.
 
             :param str endpoint: The endpoint od the API
@@ -88,8 +85,9 @@ class ApiCall(object):
         self.api_version = api_version
         self.extract_items = extract_items
         self.session = bot.session
+        self.uri_args = uri_args
 
-        if uri_parts is None:
+        if not uri_parts:
             self.uri_parts = ()
         else:
             self.uri_parts = uri_parts
@@ -106,17 +104,24 @@ class ApiCall(object):
         else:
             return ApiCall(self.bot, self.endpoint, self.api_version,
                            extract_items=self.extract_items,
-                           uri_parts=self.uri_parts + (k,))
+                           uri_parts=self.uri_parts + (k,),
+                           uri_args=self.uri_args)
 
-    def __call__(self, *args):
+    def __call__(self, *args, **kwargs):
         """ Append the arguments to the `uri_parts` tuple. `self` is returned
             to enable chainability.
         """
-        if args:
+        if args or kwargs:
+            uri_args = dict()
+
+            if kwargs:
+                uri_args = self.uri_args.copy()
+                uri_args.update(kwargs)
 
             return ApiCall(self.bot, self.endpoint, self.api_version,
                            extract_items=self.extract_items,
-                           uri_parts=self.uri_parts + args)
+                           uri_parts=self.uri_parts + args,
+                           uri_args=uri_args)
         return self
 
     def build_headers(self):
@@ -126,7 +131,7 @@ class ApiCall(object):
 
     async def _process_call(self, method):
 
-        url = build_url(self.endpoint, self.api_version, self.uri_parts)
+        url = build_url(self.endpoint, self.api_version, self.uri_parts, self.uri_args)
 
         async with self.session.request(method, url, headers=self.build_headers()) as r:
             data = await r.json()
@@ -238,8 +243,8 @@ class ApiCall(object):
                 # and to prevent hitting the 10 token limit
                 token_id = token['id']
                 data = {'id': token_id}
-                async with self.session.post(delete_token_url, json=data, headers=token_header) as sess:
-                    response = await sess.json()
+                async with self.session.post(delete_token_url, json=data, headers=token_header):
+                    pass
 
         # POST request
         async with self.session.post(create_token_url, json=get_token_data, headers=token_header) as sess:

@@ -13,6 +13,7 @@ class TagIDTable(db.Table, table_name='tag_to_id'):
     id = db.Column(db.Integer(big=True))
     tag = db.Column(db.String())
 
+
 class RolesCTX(object):
     pass
 
@@ -22,6 +23,7 @@ class WarAdmin:
         self.bot = bot
         self.bot.IN_WAR_ROLE_ID = 526702907127627793
         self.AW_SERVER_ID = 352298238180851712
+        self.NERD_BOT_ZONE_ID = 527373033568993282
         self.CLAN_TAG = '#P0LYJC8C'
 
     async def __error(self, ctx, error):
@@ -351,8 +353,9 @@ class WarAdmin:
         ctx.db = self.bot.pool
         ctx.guild = self.bot.get_guild(self.AW_SERVER_ID)
         ctx.author = ctx.guild.get_member(self.bot.user.id)
-        await self.give_roles(ctx=ctx)
-
+        e = await self.give_roles(ctx=ctx)
+        if e:
+            await self.bot.get_channel(self.NERD_BOT_ZONE_ID).send(embed=e)
 
 
 def setup(bot):

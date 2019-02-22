@@ -171,7 +171,6 @@ class MsgPag:
     async def paginate(self, start_page=1, to_del=None):
         'Actually paginate the entries and run the interactive loop if necessary.'
         self.to_del = to_del
-        print(to_del)
         await self.show_page(start_page, first=True)
         while self.paginating:
             try:
@@ -218,7 +217,6 @@ class EmbedPag:
         self.reaction_emojis = [('⏮', self.first_page), ('◀', self.previous_page), ('▶', self.next_page),
                                 ('⏭', self.last_page), ('🔢', self.numbered_page), ('⏹', self.stop_pages),
                                 ('ℹ', self.show_help)]
-        print(self.message)
         guild = self.message.guild
         if guild is not None:
             self.permissions = self.message.channel.permissions_for(guild.me)
