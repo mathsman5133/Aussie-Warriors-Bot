@@ -83,22 +83,23 @@ class WarAdmin(commands.Cog):
         role = ctx.guild.get_role(self.bot.IN_WAR_ROLE_ID)
 
         mention_ids = [n.id for n in members]
-        member_tuple = list_to_sql_tuple(mention_ids)
-
-        query = f"SELECT tag, userid FROM claims WHERE userid in {member_tuple};"
-        dump = await ctx.db.fetch(query)
-
-        found_ids = []
-        if dump:
-            fmt = ', '.join(f"('{tag}', {userid})"
-                            for (index, (tag, userid)) in enumerate(dump))
-            query = f"INSERT INTO last_war (tag, userid) VALUES {fmt};"
-            await ctx.db.execute(query)
-
-        no_claim_ids = list(set(mention_ids) - set(found_ids))
-
+        # member_tuple = list_to_sql_tuple(mention_ids)
+        #
+        # query = f"SELECT DISTINCT userid FROM claims WHERE userid in {member_tuple};"
+        # dump = await ctx.db.fetch(query)
+        #
+        # found_ids = []
+        # if dump:
+        #     fmt = ', '.join(f"('{tag}', {userid})"
+        #                     for (index, (tag, userid)) in enumerate(dump))
+        #     query = f"INSERT INTO last_war (tag, userid) VALUES {fmt};"
+        #     await ctx.db.execute(query)
+        #
+        # no_claim_ids = list(set(mention_ids) - set(found_ids))
+        #
+        # if no_claim_ids:
         fmt = ', '.join(f"('Unknown', {userid})"
-                        for userid in no_claim_ids)
+                        for userid in mention_ids)
         query = f"INSERT INTO last_war (tag, userid) VALUES {fmt};"
 
         await ctx.db.execute(query)
