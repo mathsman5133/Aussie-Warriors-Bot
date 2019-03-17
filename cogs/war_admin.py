@@ -8,7 +8,7 @@ def list_to_sql_tuple(list_of_things):
     if len(list_of_things) == 0:
         return None
     if len(list_of_things) == 1:
-        return f'({list_of_things[0]}, )'
+        return f'({list_of_things[0]},)'
 
     return tuple(n for n in list_of_things)
 
