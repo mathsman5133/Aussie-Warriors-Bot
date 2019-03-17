@@ -336,7 +336,7 @@ class WarAdmin(commands.Cog):
             await db.execute('TRUNCATE last_war')
 
             # Now insert the values
-            query = f"SELECT tag, userid FROM claims WHERE tag IN {currentTags}"
+            query = f"SELECT tag, userid FROM claims WHERE tag in {list_to_sql_tuple(currentTags)}"
             dump = await db.fetch(query)
 
             fmt = ', '.join(f"('{tag}', {userid})"
