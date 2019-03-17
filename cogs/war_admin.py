@@ -85,20 +85,23 @@ class WarAdmin(commands.Cog):
         mention_ids = [n.id for n in members]
         member_tuple = list_to_sql_tuple(mention_ids)
 
-        query = "SELECT tag, userid FROM claims WHERE userid IN $1;"
+        query = f"SELECT tag, userid FROM claims WHERE userid in {member_tuple};"
         dump = await ctx.db.fetch(query, member_tuple)
 
         found_ids = []
-        query = "INSERT INTO last_war (tag, userid) VALUES ($1 $2);"
         if dump:
-            for n in dump:
-                await ctx.db.execute(query, n['tag'], n['userid'])
-                found_ids.append(n['userid'])
+            fmt = ', '.join(f"('{tag}', {userid})"
+                            for (index, (tag, userid)) in enumerate(dump))
+            query = f"INSERT INTO last_war (tag, userid) VALUES {fmt};"
+            await ctx.db.execute(query)
 
         no_claim_ids = list(set(mention_ids) - set(found_ids))
 
-        for n in no_claim_ids:
-            await ctx.db.execute(query, 'Unknown', n)
+        fmt = ', '.join(f"('Unknown', {userid})"
+                        for userid in no_claim_ids)
+        query = f"INSERT INTO last_war (tag, userid) VALUES {fmt};"
+
+        await ctx.db.execute(query)
 
         errors = []
 
