@@ -39,8 +39,8 @@ class WarStats(commands.Cog):
                         value=error.msg)
             await ctx.send(embed=e)
 
-    async def cog_unload(self):
-        await self.stats_updater_task.cancel()
+    def cog_unload(self):
+        asyncio.get_event_loop().run_until_complete(self.stats_updater_task.cancel)
 
     @commands.command()
     @checks.manage_server()
