@@ -115,7 +115,7 @@ class Plural:
         return f'{v} {self.name}'
 
 
-class Admin:
+class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self._last_result = ''

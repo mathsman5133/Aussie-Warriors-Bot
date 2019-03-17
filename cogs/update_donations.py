@@ -27,7 +27,7 @@ class Averages(db.Table):
     warning = db.Column(db.Boolean(), index=True)
 
 
-class Update:
+class Update(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -35,8 +35,7 @@ class Update:
         self.auto_monthly_task = bot.loop.create_task(self.auto_monthly_update())
         self.auto_pings_task = bot.loop.create_task(self.auto_send_pings())
 
-    @staticmethod
-    async def __error(ctx, error):
+    async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             e = discord.Embed(colour=discord.Colour.red())
             e.description = error

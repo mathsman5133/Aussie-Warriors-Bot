@@ -4,12 +4,12 @@ import discord
 from discord.ext import commands
 
 
-class ShowDonations:
+class ShowDonations(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.DONATION_PING_CHANNEL_ID = 462205081945899008
 
-    async def __error(self, ctx, error):
+    async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             e = discord.Embed(colour=discord.Colour.red())
             e.description = error

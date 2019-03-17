@@ -5,7 +5,7 @@ import traceback
 import time
 
 
-class CommandLogging:
+class CommandLogging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.bot.info_channel_id = 527373033568993282
@@ -69,7 +69,8 @@ class CommandLogging:
         e.timestamp = datetime.datetime.utcnow()
         e.set_footer(text="Please ping maths if the solution is not obvious or you don't understand")
 
-        await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
+        # await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
+        await ctx.send(embed=e)
 
 
 def setup(bot):

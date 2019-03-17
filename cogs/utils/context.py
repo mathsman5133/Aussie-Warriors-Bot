@@ -152,11 +152,8 @@ class Context(commands.Context):
         finally:
             return confirm
 
-    def tick(self, opt, label=None):
-        emoji = '<:greenTick:330090705336664065>' if opt else '<:redTick:330090723011592193>'
-        if label is not None:
-            return f'{emoji}: {label}'
-        return emoji
+    async def tick(self):
+        await self.message.add_reaction('\u2705')
 
     async def _acquire(self, timeout):
         if self.db is None:

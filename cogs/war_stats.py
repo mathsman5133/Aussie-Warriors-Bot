@@ -1,6 +1,6 @@
 from discord.ext import commands
 from cogs.utils import checks, paginator, db
-from cogs.admin import TabularData, Admin
+from cogs.admin import TabularData
 
 import asyncio
 import discord
@@ -20,7 +20,7 @@ class WarStatsTable(db.Table, table_name='war_stats'):
     defenserate = db.Column(db.String())
 
 
-class WarStats:
+class WarStats(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.stats_updater_task = bot.loop.create_task(self.warStatsAutoUpdater())
@@ -29,7 +29,7 @@ class WarStats:
     NERD_BOT_ZONE_CHANNEL = 527373033568993282
     CLAN_TAG = '#P0LYJC8C'
 
-    async def __error(self, ctx, error):
+    async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             await ctx.send(error)
 
@@ -38,6 +38,9 @@ class WarStats:
             e.add_field(name='COC API Error',
                         value=error.msg)
             await ctx.send(embed=e)
+
+    async def cog_unload(self):
+        await self.stats_updater_task.cancel()
 
     @commands.command()
     @checks.manage_server()
@@ -50,7 +53,7 @@ class WarStats:
         Aussie Warriors (clan) must have status `warEnded` for this to work
         """
         await self.calculateWarStats()
-        await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
+        await ctx.tick()  # green tick emoji --> success
 
     @commands.command()
     @checks.manage_server()
@@ -66,7 +69,7 @@ class WarStats:
                         '(https://docs.google.com/spreadsheets/d/' \
                         '15aXj7a7GyDahToZHfSFo4YmH1DfZrwTjIL2an99o4FY/edit?usp=sharing)'
         await ctx.send(embed=e)
-        await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
+        await ctx.tick()  # green tick emoji --> success
 
     @commands.command()
     async def war_status(self, ctx, tag_or_name: str=None):
@@ -122,7 +125,7 @@ class WarStats:
         self.bot.loaded['updateStats'] = true_false
         await self.bot.save_json()  # save that value in json for persistant storage when bot down
 
-        await ctx.message.add_reaction('\u2705')  # green tick emoji --> success
+        await ctx.tick()  # green tick emoji --> success
 
     @commands.command()
     @checks.restricted_channel(LEAGUE_BOT_CHANNEL, NERD_BOT_ZONE_CHANNEL)
@@ -395,7 +398,7 @@ class WarStats:
         # Infinite loop
         try:
             while not self.bot.is_closed():
-                await Admin(self.bot).task_stats('war_stats', False)
+                await self.bot.get_cog('Admin').task_stats('war_stats', False)
                 # Sleep for 2 mins before querying the API
 
                 await asyncio.sleep(60)
@@ -416,7 +419,7 @@ class WarStats:
                     if self.bot.update_stats == 'true':
                         if currentWar['state'] == 'warEnded':
                             await self.calculateWarStats()
-                            await Admin(self.bot).task_stats('war_stats', True)
+                            await self.bot.get_cog('Admin').task_stats('war_stats', True)
                             await (self.bot.get_channel(self.bot.info_channel_id)).send('war-stats-update done')
 
                             continue
@@ -428,8 +431,12 @@ class WarStats:
                         self.bot.loaded['updateStats'] = 'true'
                         await self.bot.save_json()
                         cog = self.bot.get_cog('WarAdmin')
-                        await cog.give_roles_auto()
-                        await (self.bot.get_channel(self.bot.info_channel_id)).send('war-roles-auto done')
+                        e = await cog.give_roles_auto()
+                        channel = self.bot.get_channel(self.bot.info_channel_id)
+                        if e:
+                            await channel.send(embed=e)
+                        else:
+                            await channel.send('war-roles-auto done')
 
                         continue
                 else:
@@ -462,7 +469,7 @@ class WarStats:
         except asyncio.CancelledError:
             pass
         except (OSError, discord.ConnectionClosed):
-            self.stats_updater_task.cancel()
+            await self.stats_updater_task.cancel()
             self.stats_updater_task = self.bot.loop.create_task(self.warStatsAutoUpdater())
 
     # Function to send database to Google sheet
@@ -497,13 +504,3 @@ class WarStats:
 
 def setup(bot):
     bot.add_cog(WarStats(bot))
-
-
-def teardown(bot):
-    wsclass = WarStats(bot)
-
-    async def do():
-        await wsclass.stats_updater_task.cancel()
-
-    asyncio.get_event_loop().run_until_complete(do)
-    # lets cancel the tasks now as we will reitiniate if reload cog. else we don't want them continuing anyway

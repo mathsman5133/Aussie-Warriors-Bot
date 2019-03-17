@@ -19,11 +19,11 @@ class Claims(db.Table):
     exempt = db.Column(db.Boolean())
 
 
-class Claim:
+class Claim(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def __error(self, ctx, error):
+    async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             e = discord.Embed(colour=discord.Colour.red())
             e.description = error.__str__()
@@ -59,6 +59,7 @@ class Claim:
             member = ctx.guild.get_member(dump['userid'])
             raise commands.BadArgument(f'{ign} ({tag}) has been claimed by '
                                        f'{member.display_name}#{member.discriminator} ({member.id})')
+
         if player_tag.startswith('#'):
             cocplayer = await self.bot.coc.players(player_tag).get(self.bot.coc_token)
             if 'notFound' in cocplayer.values():
