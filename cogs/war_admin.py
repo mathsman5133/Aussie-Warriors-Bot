@@ -6,7 +6,7 @@ from cogs.utils import checks, db
 
 def list_to_sql_tuple(list_of_things):
     if len(list_of_things) == 0:
-        return '()'
+        return None
     if len(list_of_things) == 1:
         return f'({list_of_things[0]}, )'
 
