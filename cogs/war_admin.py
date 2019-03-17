@@ -15,7 +15,7 @@ def list_to_sql_tuple(list_of_things):
 
 class LastWarTable(db.Table, table_name='last_war'):
     tag = db.Column(db.String())
-    id = db.Column(db.Integer(big=True))
+    userid = db.Column(db.Integer(big=True))
 
 
 class TagIDTable(db.Table, table_name='tag_to_id'):
@@ -166,8 +166,8 @@ class WarAdmin(commands.Cog):
         role = ctx.guild.get_role(self.bot.IN_WAR_ROLE_ID)
 
         for n in role.members:
-            n.remove_roles(role, reason=f'{str(ctx.author)} - '
-                                        f'{ctx.command.qualified_name}')
+            await n.remove_roles(role, reason=f'{str(ctx.author)} - '
+                                              f'{ctx.command.qualified_name}')
         await ctx.tick()
 
     @war_role.command()
