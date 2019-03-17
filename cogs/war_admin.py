@@ -86,7 +86,7 @@ class WarAdmin(commands.Cog):
         member_tuple = list_to_sql_tuple(mention_ids)
 
         query = f"SELECT tag, userid FROM claims WHERE userid in {member_tuple};"
-        dump = await ctx.db.fetch(query, member_tuple)
+        dump = await ctx.db.fetch(query)
 
         found_ids = []
         if dump:
