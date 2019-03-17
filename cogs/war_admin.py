@@ -86,7 +86,7 @@ class WarAdmin(commands.Cog):
         member_tuple = list_to_sql_tuple(mention_ids)
 
         query = "SELECT tag, userid FROM claims WHERE userid IN $1;"
-        dump = await ctx.fetch(query, member_tuple)
+        dump = await ctx.db.fetch(query, member_tuple)
 
         found_ids = []
         query = "INSERT INTO last_war (tag, userid) VALUES ($1 $2);"
