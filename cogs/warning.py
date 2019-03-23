@@ -3,6 +3,7 @@ import discord
 from cogs.utils import db, checks, time
 import datetime
 import asyncio
+from cogs.war_admin import list_to_sql_tuple
 
 
 class WarningsTable(db.Table, table_name='warnings'):
@@ -95,7 +96,7 @@ class Warnings(commands.Cog):
         await channel.send(embed=e)
 
     @_warnings.command(aliases=['delete'])
-    async def remove(self, ctx, warning_id: int):
+    async def remove(self, ctx, *warning_ids: int):
         """Remove a warning from a member
 
         Usage: `warn add [id to remove]`
@@ -104,27 +105,21 @@ class Warnings(commands.Cog):
 
         You must have `manage_guild` permissions
         """
-        query = "SELECT * FROM warnings WHERE id = $1"
-        dump = await ctx.db.fetchrow(query, warning_id)
-
-        if not dump:
-            raise commands.BadArgument('Warning ID not found.')
-
-        query = "UPDATE warnings SET active=False WHERE id = $1"
-        await ctx.db.execute(query, warning_id)
+        query = f"UPDATE warnings SET active=False WHERE id IN {list_to_sql_tuple(warning_ids)}"
+        await ctx.db.execute(query)
 
         await ctx.tick()
 
     @_warnings.command(name='clear')
-    async def _clear(self, ctx, user: discord.Member):
+    async def _clear(self, ctx, *users: discord.Member):
         """Clear warnings for a member - server specific
 
         Usage: `warn clear [user]`
 
         You must have `manage_guild` permissions
         """
-        query = "UPDATE warnings SET active=False WHERE user_id = $1"
-        await ctx.db.execute(query, user.id)
+        query = f"UPDATE warnings SET active=False WHERE user_id IN {list_to_sql_tuple([n.id for n in users])}"
+        await ctx.db.execute(query)
 
         await ctx.tick()
 
