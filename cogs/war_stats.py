@@ -20,10 +20,26 @@ class WarStatsTable(db.Table, table_name='war_stats'):
     defenserate = db.Column(db.String())
 
 
+class TempStatsTable(db.Table, table_name='temp_stats'):
+    id = db.PrimaryKeyColumn()
+
+    enemy_clan_tag = db.Column(db.String(), index=True)
+    attack_number = db.Column(db.Integer())
+    enemy_tag = db.Column(db.String())
+    attacker_tag = db.Column(db.String())
+    name = db.Column(db.String())
+    th = db.Column(db.Integer())
+    enemy_th = db.Column(db.Integer())
+    stars = db.Column(db.Integer())
+    percent = db.Column(db.Numeric())
+    our_hit = db.Column(db.Boolean(), index=True)
+
+
 class WarStats(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.stats_updater_task = bot.loop.create_task(self.warStatsAutoUpdater())
+        self.stats_updater_task = bot.loop.create_task(self.war_stats_auto_updater())
+        self.role_adder_task = bot.loop.create_task(self.war_role_adding_task())
 
     LEAGUE_BOT_CHANNEL = 528822099360612352
     NERD_BOT_ZONE_CHANNEL = 527373033568993282
@@ -41,19 +57,48 @@ class WarStats(commands.Cog):
 
     def cog_unload(self):
         asyncio.get_event_loop().run_until_complete(self.stats_updater_task.cancel)
+        asyncio.get_event_loop().run_until_complete(self.role_adder_task.cancel)
 
     @commands.command()
     @checks.manage_server()
     @checks.mod_commands()
-    @checks.clan_status(['warEnded'])
-    async def statsdump(self, ctx):
-        """Updates stats in database for current finished war
+    async def dl_temp(self, ctx):
+        """Updates attacks in the `temp_stats` table
 
         You must have `manage_server` permissions to run this command.
-        Aussie Warriors (clan) must have status `warEnded` for this to work
         """
-        await self.calculateWarStats()
-        await ctx.tick()  # green tick emoji --> success
+        await self.temporory_war_stats()
+        await ctx.tick()
+
+    @commands.command()
+    @checks.manage_server()
+    @checks.mod_commands()
+    async def dl_all(self, ctx):
+        """Updates stats in `war_stats` table.
+
+        It will delete all attacks in `temp_stats` table once completed.
+
+        It will not update stats for your current war, unless status is `warEnded`.
+
+        You must have `manage_server` permissions to run this command.
+        """
+        status, warning_msg, warnings_sent, ts, enemy_tag = \
+            await self.get_coc_status(None, 0)
+
+        query = "SELECT DISTINCT enemy_clan_tag FROM temp_stats"
+
+        if status == 'inWar':
+            query = f"SELECT DISTINCT enemy_clan_tag FROM temp_stats WHERE enemy_clan_tag != {enemy_tag}"
+
+        tags = await ctx.db.fetch(query)
+
+        query = "DELETE FROM last_war WHERE enemy_clan_tag = $1"
+
+        for tag in tags:
+            await self.final_war_stats(tag)
+            await self.bot.pool.execute(query, tag)
+
+        await ctx.tick()
 
     @commands.command()
     @checks.manage_server()
@@ -232,93 +277,214 @@ class WarStats(commands.Cog):
     # (IT WILL NOT DO ANYTHING IF THE WAR HASN'T ENDED), so make sure this is
     # called after the war has ended and before new war search has begun'''
 
-    async def calculateWarStats(self):
-        '''Takes in coc client and db connection as arguement, then calculates the stats for current war,
-        updates the war_stats table by removing the 20th war and inserting the latest war'''
+    async def temporory_war_stats(self):
+        attacks_added = 0
 
-        # create cursor & define tag
+        query = "SELECT attack_number FROM temp_stats"
+        dump = await self.bot.pool.fetch(query)
+        att_orders = [n[0] for n in dump]
 
-        # Query to get details for current war
-        currentWar = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
+        current_war = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
+        enemy_clan_tag = current_war['opponent']['tag']
 
-        # If war hasn't ended yet don't update or calculate anything
-        if currentWar['state'] != 'warEnded':
-            return
+        query = """INSERT INTO temp_stats 
+                    (enemy_clan_tag, attack_number, enemy_tag, attacker_tag,
+                     name, th, enemy_th, stars, percent, our_hit)
+                    VALUES ($1, $2, $3, $4,
+                            $5, $6, $7, $8)
+                """
 
-        # This will store all the rows (Essentially being a list of tuples)
-        rows = []
+        async def add_attacks(our_hit: bool):
+            if 'attacks' not in member.keys():
+                return None
 
-        # Loop over all members of clan and calculate all stats
-        for member in currentWar['clan']['members']:
+            for attack in member['attacks']:
+                if attack['attack_number'] in att_orders:
+                    return None
 
-            # Some values which will be used to either calculate stats or be fed directly into database
-            playerTownhall = member['townhallLevel']
+                enemy_th = self.getTownHallLevel(attack['defenderTag'], current_war)
 
-            #Check if attacks exist
-            if 'attacks' in member.keys():
-                attacks = member['attacks']
+                await self.bot.pool.execute(query,
+                                            enemy_clan_tag,
+                                            attack['attack_number'],
+                                            attack['defenderTag'],
+                                            member['tag'],
+                                            member['name'],
+                                            member['townhallLevel'],
+                                            enemy_th,
+                                            attack['stars'],
+                                            attack['destructionPercentage'],
+                                            our_hit)
+                return True
 
-                # Used to store the successful hits i.e 3stars
-                successfulHits = []
+        for member in current_war['clan']['members']:
+            n = await add_attacks(True)
+            if n:
+                attacks_added += 1
 
-                # Loop over every attack by member
-                for attack in attacks:
-                    # Find enemy TH level
-                    enemyTownhall = self.getTownHallLevel(attack['defenderTag'], currentWar)
+        for member in current_war['opponent']['members']:
+            n = await add_attacks(False)
+            if n:
+                attacks_added += 1
 
-                    # Only count attack if either player th = enemy th
-                    if enemyTownhall == playerTownhall:
-                        hit = 1 if attack['stars'] == 3 else 0
-                        successfulHits.append(hit)
+        return attacks_added
 
-                # calculate hitrate
-                hr = str(sum(successfulHits)) + '/' + str(len(successfulHits))
-            else:
-                #If no attacks set hitrate = 0/0
-                hr = '0/0'
+    async def final_war_stats(self, tag):
+        query = "SELECT * FROM temp_stats WHERE enemy_clan_tag = $1 AND our_hit = $1"
+        our_hits = await self.bot.pool.execute(query, tag, True)
+        opponent_hits = await self.bot.pool.execute(query, tag, False)
 
-            # Get Defenses for the member (Returns defendedAttacks,totalAttacks on base)
-            defendedAttacks, totalAttacksOnBase = self.getdefenses(member['tag'], currentWar)
+        if not our_hits:
+            return False
 
-            # Values to be fed into db
-            warNo = 1
-            playerName = member['name']
-            playerTag = member['tag']
-            playerTownhall = str(playerTownhall)
+        member_hits = {}
+        enemy_hits = {}
 
-            dr = str(defendedAttacks) + '/' + str(totalAttacksOnBase)
+        for attack in our_hits:
+            member_hits[attack['tag']].append(attack)
 
-            # Save all info into a tuple (Easier to insert into db)
-            row = (warNo, playerName, playerTag, playerTownhall, hr, dr)
+        for attack in opponent_hits:
+            enemy_hits[attack['enemy_tag']].append(attack)
 
-            # Append row to rows list
-            rows.append(row)
+        sql_tuples = []
 
-        # Finally we'll update the database
+        for member in member_hits:
+            successful_hits = []
+            defended_attacks = 0
+            total_attacks_on_base = 0
 
-        # first we increase the war no for all values in table, since new war has been added
-        sql = '''UPDATE war_stats SET war_no = war_no +1;'''
-        await self.bot.pool.execute(sql)
+            # Loop over every attack by member
+            for attack in member:
+                # Only count attack if either player th = enemy th
+                if attack['th'] == attack['enemy_th']:
+                    hit = 1 if attack['stars'] == 3 else 0
+                    successful_hits.append(hit)
+            for attack in enemy_hits[member['tag']]:
+                if attack['th'] != attack['enemy_th']:
+                    continue
 
-        # Next we'll drop all the rows which have war_no greater than 20
-        sql = '''DELETE FROM war_stats WHERE war_no>20;'''
-        await self.bot.pool.execute(sql)
+                total_attacks_on_base += 1
+                if attack['stars'] != 3:
+                    defended_attacks += 1
 
-        # Now we just insert all values from rows one by one
-        for row in rows:
-            sql = f'''INSERT INTO war_stats(war_no,name,tag,th,hitrate,defenserate) VALUES {row};'''
-            await self.bot.pool.execute(sql)
+            hr = f'{sum(successful_hits)}/{(len(successful_hits))}'
+            war_no = 1
+            player_name = member['name']
+            player_tag = member['tag']
+            player_th = member[0]['th']
 
-        # Finally close cursor and commit changes
-        '''Commenting these for now, idk how ctx.db.execute works, remove if these are not needed'''
-        # cursor.close()
-        # connection.commit()
+            dr = f'{defended_attacks}/{total_attacks_on_base}'
 
-        # # Finally Set updateStats = 'false', since this war's stats have been added
-        # self.bot.update_stats = 'false'
-        # Save value in file
+            row = (war_no, player_name, player_tag, player_th, hr, dr)
+            sql_tuples.append(row)
+
+        query = "UPDATE war_stats SET war_no = war_no +1;"
+        await self.bot.pool.execute(query)
+
+        query = "DELETE FROM war_stats WHERE war_no>20;"
+        await self.bot.pool.execute(query)
+
+        insert_rows = ', '.join(n for n in sql_tuples)
+        query = f"""INSERT INTO war_stats 
+                    (war_no, name, tag, th,
+                     hitrate, defenserate) VALUES {insert_rows};"""
+        await self.bot.pool.execute(query)
+
+        query = "DELETE FROM last_war WHERE enemy_clan_tag = $1"
+        await self.bot.pool.execute(query, tag)
+
         self.bot.loaded['updateStats'] = 'false'
         await self.bot.save_json()
+
+        return True
+
+    # async def calculateWarStats(self):
+    #     """Takes in coc client and db connection as arguement, then calculates the stats for current war,
+    #     updates the war_stats table by removing the 20th war and inserting the latest war"""
+    #
+    #     # create cursor & define tag
+    #
+    #     # Query to get details for current war
+    #     currentWar = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
+    #
+    #     # If war hasn't ended yet don't update or calculate anything
+    #     if currentWar['state'] != 'warEnded':
+    #         return
+    #
+    #     # This will store all the rows (Essentially being a list of tuples)
+    #     rows = []
+    #
+    #     # Loop over all members of clan and calculate all stats
+    #     for member in currentWar['clan']['members']:
+    #
+    #         # Some values which will be used to either calculate stats or be fed directly into database
+    #         playerTownhall = member['townhallLevel']
+    #
+    #         #Check if attacks exist
+    #         if 'attacks' in member.keys():
+    #             attacks = member['attacks']
+    #
+    #             # Used to store the successful hits i.e 3stars
+    #             successfulHits = []
+    #
+    #             # Loop over every attack by member
+    #             for attack in attacks:
+    #                 # Find enemy TH level
+    #                 enemyTownhall = self.getTownHallLevel(attack['defenderTag'], currentWar)
+    #
+    #                 # Only count attack if either player th = enemy th
+    #                 if enemyTownhall == playerTownhall:
+    #                     hit = 1 if attack['stars'] == 3 else 0
+    #                     successfulHits.append(hit)
+    #
+    #             # calculate hitrate
+    #             hr = str(sum(successfulHits)) + '/' + str(len(successfulHits))
+    #         else:
+    #             #If no attacks set hitrate = 0/0
+    #             hr = '0/0'
+    #
+    #         # Get Defenses for the member (Returns defendedAttacks,totalAttacks on base)
+    #         defendedAttacks, totalAttacksOnBase = self.getdefenses(member['tag'], currentWar)
+    #
+    #         # Values to be fed into db
+    #         warNo = 1
+    #         playerName = member['name']
+    #         playerTag = member['tag']
+    #         playerTownhall = str(playerTownhall)
+    #
+    #         dr = str(defendedAttacks) + '/' + str(totalAttacksOnBase)
+    #
+    #         # Save all info into a tuple (Easier to insert into db)
+    #         row = (warNo, playerName, playerTag, playerTownhall, hr, dr)
+    #
+    #         # Append row to rows list
+    #         rows.append(row)
+    #
+    #     # Finally we'll update the database
+    #
+    #     # first we increase the war no for all values in table, since new war has been added
+    #     sql = '''UPDATE war_stats SET war_no = war_no +1;'''
+    #     await self.bot.pool.execute(sql)
+    #
+    #     # Next we'll drop all the rows which have war_no greater than 20
+    #     sql = '''DELETE FROM war_stats WHERE war_no>20;'''
+    #     await self.bot.pool.execute(sql)
+    #
+    #     # Now we just insert all values from rows one by one
+    #     for row in rows:
+    #         sql = f'''INSERT INTO war_stats(war_no,name,tag,th,hitrate,defenserate) VALUES {row};'''
+    #         await self.bot.pool.execute(sql)
+    #
+    #     # Finally close cursor and commit changes
+    #     '''Commenting these for now, idk how ctx.db.execute works, remove if these are not needed'''
+    #     # cursor.close()
+    #     # connection.commit()
+    #
+    #     # # Finally Set updateStats = 'false', since this war's stats have been added
+    #     # self.bot.update_stats = 'false'
+    #     # Save value in file
+    #     self.bot.loaded['updateStats'] = 'false'
+    #     await self.bot.save_json()
 
     async def statsForTh(self, townhallLevel, wars_to_fetch):
         '''Takes in townhall as arguement and gives the stats for that particular townhall level'''
@@ -392,85 +558,230 @@ class WarStats(commands.Cog):
 
         return stats
 
-    async def warStatsAutoUpdater(self):
+    async def get_coc_status(self, warning_msg, warnings_sent):
+        ts = None
+
+        current_war = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
+
+        if 'state' in current_war.keys():
+            if current_war['state'] in ['preparation', 'inWar']:
+                ts = self.get_seconds(current_war['endTime'])
+
+            if warning_msg:
+                warning_msg = None
+                warnings_sent = 0
+
+            return current_war['state'], warning_msg, warnings_sent, ts, current_war['opponent']['tag']
+
+        e = discord.Embed(colour=discord.Colour.red())
+
+        if 'reason' in current_war.keys():
+            message_string = re.sub('\d', '\\*', current_war['message'])  # message may contain ip. obscure that
+            e.add_field(name="Clash of Clans API Error",
+                        value=f"Reason: {current_war['reason']}\nMessage: {message_string}")
+
+        elif not current_war:
+            e.add_field(name="Clash of Clans API Error",
+                        value="The request returned `None`\nIs it an incorrect token?")
+
+        else:
+            e.add_field(name="Clash of Clans API Error",
+                        value="Unknown Error")
+
+        e.set_footer(text=f'{warnings_sent} warnings sent (Error persisted for ~{warnings_sent*2} minutes)')
+
+        if warning_msg:
+            await warning_msg.edit(embed=e)
+            warnings_sent += 1
+
+        else:
+            msg = await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
+            warning_msg = msg
+            warnings_sent += 1
+
+        return None, warning_msg, warnings_sent, ts, None
+
+    @staticmethod
+    def get_seconds(timestamp):
+        end_time = dateutil.parser.parse(timestamp)
+
+        delta = end_time - datetime.datetime.now(datetime.timezone.utc)
+        return delta.total_seconds()
+
+    async def war_stats_auto_updater(self):
         warnings_sent = 0
         warning_msg = None
-        # Infinite loop
+
         try:
             while not self.bot.is_closed():
                 await self.bot.get_cog('Admin').task_stats('war_stats', False)
-                # Sleep for 2 mins before querying the API
-
                 await asyncio.sleep(60)
 
-                # Query to get details for current war
-                currentWar = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
+                status, warning_msg, warnings_sent, ts, enemy_tag = \
+                    await self.get_coc_status(warning_msg, warnings_sent)
 
-                # Check if state exists in current war, (This is a check in case of maintainence)
-                if 'state' in currentWar.keys():
-                    if warning_msg:
-                        warning_msg = None
-                        warnings_sent = 0
+                if not status:
+                    continue
 
-                    # Check if we have to update stats && the war has ended
-                    # (We can't check for just warEnded because, it will keep updating
-                    # for same war till the status changes)
-
-                    if self.bot.update_stats == 'true':
-                        if currentWar['state'] == 'warEnded':
-                            await self.calculateWarStats()
-                            await self.bot.get_cog('Admin').task_stats('war_stats', True)
-                            await (self.bot.get_channel(self.bot.info_channel_id)).send('war-stats-update done')
-
-                            continue
-                    # In case updateStats is 'false' (i.e last war ended and it's stats were updated,
-                    #  so we need to check for next war, once we get a match, we make updateStats 'true')
-                    elif currentWar['state'] in ['preparation', 'inWar']:
-                        self.bot.update_stats = 'true'
-                        # Write the value of updateStats in file
-                        self.bot.loaded['updateStats'] = 'true'
-                        await self.bot.save_json()
-                        cog = self.bot.get_cog('WarAdmin')
-                        e = await cog.give_roles_auto()
-                        channel = self.bot.get_channel(self.bot.info_channel_id)
-                        if e:
-                            await channel.send(embed=e)
-                        else:
-                            await channel.send('war-roles-auto done')
-
+                if status == 'warEnded':
+                    if self.bot.update_stats == 'false':
                         continue
-                else:
-                    e = discord.Embed(colour=discord.Colour.red())
-                    # You might want to log the error
-                    if 'reason' in currentWar.keys():
-                        message_string = re.sub('\d', '\\*', currentWar['message'])  # message may contain ip. obscure that
-                        e.add_field(name="Clash of Clans API Error",
-                                    value=f"Reason: {currentWar['reason']}\nMessage: {message_string}")
 
-                    elif not currentWar:
-                        e.add_field(name="Clash of Clans API Error",
-                                    value="The request returned `None`\nIs it an incorrect token?")
-
+                    n = await self.final_war_stats(enemy_tag)
+                    if n is True:
+                        await self.bot.get_cog('Admin').task_stats('war_stats', True)
+                        await (self.bot.get_channel(self.bot.info_channel_id)).send('war-stats-update done')
                     else:
-                        e.add_field(name="Clash of Clans API Error",
-                                    value="Unknown Error")
+                        await (self.bot.get_channel(self.bot.info_channel_id)).send('tried to finalise stats, '
+                                                                                    'but there were no hits!')
+                    self.bot.update_stats = 'false'
+                    self.bot.loaded['updateStats'] = 'false'
+                    await self.bot.save_json()
 
-                    e.set_footer(text=f'{warnings_sent} warnings sent (Error persisted for ~{warnings_sent*2} minutes)')
+                    continue
 
-                    if warning_msg:
-                        await warning_msg.edit(embed=e)
-                        warnings_sent += 1
+                if status in ['preparation', 'inWar']:
+                    self.bot.update_stats = 'true'
+                    self.bot.loaded['updateStats'] = 'true'
+                    await self.bot.save_json()
 
-                    else:
-                        msg = await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
-                        warning_msg = msg
-                        warnings_sent += 1
+                    if ts < 1800:  # half hour
+                        await self.temporory_war_stats()
+                        await self.bot.get_cog('Admin').task_stats('temp_stats', True)
+                        continue
+
+                    await asyncio.sleep(ts - 1801)
+                    continue
 
         except asyncio.CancelledError:
             pass
         except (OSError, discord.ConnectionClosed):
             await self.stats_updater_task.cancel()
-            self.stats_updater_task = self.bot.loop.create_task(self.warStatsAutoUpdater())
+            self.stats_updater_task = self.bot.loop.create_task(self.war_stats_auto_updater())
+
+    async def war_role_adding_task(self):
+        warnings_sent = 0
+        warning_msg = None
+
+        try:
+            while not self.bot.is_closed():
+                await self.bot.get_cog('Admin').task_stats('war_roles', False)
+                await asyncio.sleep(60)
+
+                status, warning_msg, warnings_sent, ts, enemy_tag = \
+                    await self.get_coc_status(warning_msg, warnings_sent)
+
+                if status == 'preparation':
+                    if self.bot.war_roles == 'false':
+                        continue
+
+                    cog = self.bot.get_cog('WarAdmin')
+                    e = await cog.give_roles_auto()
+                    channel = self.bot.get_channel(self.bot.info_channel_id)
+                    if e:
+                        await channel.send(embed=e)
+                    else:
+                        await channel.send('war-roles-auto done')
+
+                    self.bot.war_roles = 'false'
+                    self.bot.loaded['warRoles'] = 'false'
+                    await self.bot.save_json()
+
+                if status in ['inWar', 'warEnded', 'notInWar']:
+                    self.bot.war_roles = 'true'
+                    self.bot.loaded['war_roles'] = 'true'
+                    await self.bot.save_json()
+
+                if ts:
+                    await asyncio.sleep(ts)
+
+        except asyncio.CancelledError:
+            pass
+        except (OSError, discord.ConnectionClosed):
+            await self.stats_updater_task.cancel()
+            self.stats_updater_task = self.bot.loop.create_task(self.war_role_adding_task())
+
+
+
+    # async def warStatsAutoUpdater(self):
+    #     warnings_sent = 0
+    #     warning_msg = None
+    #     # Infinite loop
+    #     try:
+    #         while not self.bot.is_closed():
+    #             await self.bot.get_cog('Admin').task_stats('war_stats', False)
+    #             # Sleep for 2 mins before querying the API
+    #
+    #             await asyncio.sleep(60)
+    #
+    #             # Query to get details for current war
+    #             currentWar = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
+    #
+    #             # Check if state exists in current war, (This is a check in case of maintainence)
+    #             if 'state' in currentWar.keys():
+    #                 if warning_msg:
+    #                     warning_msg = None
+    #                     warnings_sent = 0
+    #
+    #                 # Check if we have to update stats && the war has ended
+    #                 # (We can't check for just warEnded because, it will keep updating
+    #                 # for same war till the status changes)
+    #
+    #                 if self.bot.update_stats == 'true':
+    #                     if currentWar['state'] == 'warEnded':
+    #                         await self.calculateWarStats()
+    #                         await self.bot.get_cog('Admin').task_stats('war_stats', True)
+    #                         await (self.bot.get_channel(self.bot.info_channel_id)).send('war-stats-update done')
+    #
+    #                         continue
+    #                 # In case updateStats is 'false' (i.e last war ended and it's stats were updated,
+    #                 #  so we need to check for next war, once we get a match, we make updateStats 'true')
+    #                 elif currentWar['state'] in ['preparation', 'inWar']:
+    #                     self.bot.update_stats = 'true'
+    #                     # Write the value of updateStats in file
+    #                     self.bot.loaded['updateStats'] = 'true'
+    #                     await self.bot.save_json()
+    #                     cog = self.bot.get_cog('WarAdmin')
+    #                     e = await cog.give_roles_auto()
+    #                     channel = self.bot.get_channel(self.bot.info_channel_id)
+    #                     if e:
+    #                         await channel.send(embed=e)
+    #                     else:
+    #                         await channel.send('war-roles-auto done')
+    #
+    #                     continue
+    #             else:
+    #                 e = discord.Embed(colour=discord.Colour.red())
+    #                 # You might want to log the error
+    #                 if 'reason' in currentWar.keys():
+    #                     message_string = re.sub('\d', '\\*', currentWar['message'])  # message may contain ip. obscure that
+    #                     e.add_field(name="Clash of Clans API Error",
+    #                                 value=f"Reason: {currentWar['reason']}\nMessage: {message_string}")
+    #
+    #                 elif not currentWar:
+    #                     e.add_field(name="Clash of Clans API Error",
+    #                                 value="The request returned `None`\nIs it an incorrect token?")
+    #
+    #                 else:
+    #                     e.add_field(name="Clash of Clans API Error",
+    #                                 value="Unknown Error")
+    #
+    #                 e.set_footer(text=f'{warnings_sent} warnings sent (Error persisted for ~{warnings_sent*2} minutes)')
+    #
+    #                 if warning_msg:
+    #                     await warning_msg.edit(embed=e)
+    #                     warnings_sent += 1
+    #
+    #                 else:
+    #                     msg = await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
+    #                     warning_msg = msg
+    #                     warnings_sent += 1
+    #
+    #     except asyncio.CancelledError:
+    #         pass
+    #     except (OSError, discord.ConnectionClosed):
+    #         await self.stats_updater_task.cancel()
+    #         self.stats_updater_task = self.bot.loop.create_task(self.warStatsAutoUpdater())
 
     # Function to send database to Google sheet
     async def DBtoGoogleSheets(self):

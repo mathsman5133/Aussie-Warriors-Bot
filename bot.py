@@ -64,7 +64,15 @@ class AWBot(commands.Bot):
         else:
             self.loaded['sendPings'] = 'false'
             self.send_pings = self.loaded['sendPings']
-            print('No updateStats value found. I have set it to default false')
+            print('No sendPings value found. I have set it to default false')
+
+        if 'warRoles' in self.loaded.keys():
+            self.war_roles = self.loaded['warRoles']
+        else:
+            self.loaded['warRoles'] = 'false'
+            self.update_stats = self.loaded['warRoles']
+            print('No warRoles value found. I have set it to default false')
+
 
         self.coc = ClashOfClans(bot=self)
 

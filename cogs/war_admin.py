@@ -358,11 +358,6 @@ class WarAdmin(commands.Cog):
         if e:
             await self.bot.get_channel(self.NERD_BOT_ZONE_ID).send(embed=e)
 
-    @commands.command()
-    async def testee(self, ctx):
-        await self.give_roles_auto()
-        await ctx.tick()
-
 
 def setup(bot):
     bot.add_cog(WarAdmin(bot))

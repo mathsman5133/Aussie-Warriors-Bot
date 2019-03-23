@@ -44,6 +44,14 @@ class Update(commands.Cog):
             await ctx.send(f'Missing required argument {error}!')
             await ctx.show_help()
 
+    async def cog_unload(self):
+        async def do():
+            await self.auto_daily_task.cancel()
+            await self.auto_monthly_task.cancel()
+            await self.auto_pings_task.cancel()
+
+        asyncio.get_event_loop().run_until_complete(do)
+
     @commands.command()
     @checks.manage_server()
     @checks.mod_commands()
@@ -236,7 +244,7 @@ class Update(commands.Cog):
     async def auto_daily_updates(self):
         try:
             while not self.bot.is_closed():
-                await Admin(self.bot).task_stats('daily_update', False)
+                await self.bot.get_cog('Admin').task_stats('daily_update', False)
 
                 now = datetime.datetime.now(pytz.timezone('Australia/Sydney'))
 
@@ -245,7 +253,7 @@ class Update(commands.Cog):
                     await self.update()
                     await self.refresh_avg()
                     await (self.bot.get_channel(self.bot.info_channel_id)).send('auto-daily-update done')
-                    await Admin(self.bot).task_stats('daily_update', True)
+                    await self.bot.get_cog('Admin').task_stats('daily_update', True)
 
                 await asyncio.sleep(3600)  # sleep for an hour
 
@@ -258,7 +266,7 @@ class Update(commands.Cog):
     async def auto_monthly_update(self):
         try:
             while not self.bot.is_closed():
-                await Admin(self.bot).task_stats('monthly_update', False)
+                await self.bot.get_cog('Admin').task_stats('monthly_update', False)
                 # there is probably a more elegant way of finding the last monday of the month date
                 cal = calendar.Calendar(0)
                 month = cal.monthdatescalendar(datetime.date.today().year, datetime.date.today().month)
@@ -272,7 +280,7 @@ class Update(commands.Cog):
                     await self.refresh_avg()
                     await (self.bot.get_channel(self.bot.info_channel_id)).send('auto-monthly-update done')
 
-                    await Admin(self.bot).task_stats('monthly_update', True)
+                    await self.bot.get_cog('Admin').task_stats('monthly_update', True)
 
                 await asyncio.sleep(86399)  # sleep for a second less than a day
         except asyncio.CancelledError:
@@ -284,7 +292,7 @@ class Update(commands.Cog):
     async def auto_send_pings(self):
         try:
             while not self.bot.is_closed():
-                await Admin(self.bot).task_stats('send_pings', False)
+                await self.bot.get_cog('Admin').task_stats('send_pings', False)
 
                 show_donations_class = ShowDonations(self.bot)
                 today = datetime.datetime.now(pytz.timezone('Australia/Sydney'))
@@ -292,7 +300,7 @@ class Update(commands.Cog):
                 if today.hour == 7 and today.weekday() == 1:  # if its 7oc on tuesday
                     if self.bot.send_pings == 'true':
                         await show_donations_class.send_donation_pings()
-                        await Admin(self.bot).task_stats('send_pings', True)
+                        await self.bot.get_cog('Admin').task_stats('send_pings', True)
 
                 await asyncio.sleep(3600)  # sleep for an hour
 
@@ -305,17 +313,3 @@ class Update(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Update(bot))
-
-
-def teardown(bot):
-    updclass = Update(bot)
-
-    # lets cancel the tasks now as we will reitiniate if reload cog. else we don't want them going anyway
-    async def do():
-        await updclass.auto_daily_task.cancel()
-        await updclass.auto_monthly_task.cancel()
-        await updclass.auto_pings_task.cancel()
-
-    asyncio.get_event_loop().run_until_complete(do)
-
-
