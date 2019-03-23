@@ -1,6 +1,6 @@
 from discord.ext import commands
 import discord
-from cogs.utils import db, checks
+from cogs.utils import db, checks, time
 import datetime
 import asyncio
 
@@ -141,9 +141,9 @@ class Warnings(commands.Cog):
         e = discord.Embed(colour=0x36393E)
         e.title = 'Active Warnings:'
         for n in dump:
-            expires_in = int(n['expires'].total_seconds() / 86400)
+            expires_in = time.human_timedelta(n['expires'])
             e.add_field(name=f"Warning No. {n['id']}",
-                        value=f"{n['reason']}\n\nExpires in {expires_in}d")
+                        value=f"{n['reason']}\n\nExpires in {expires_in}")
 
         e.set_footer(text=f'Total Warnings: {len(dump)}').timestamp = datetime.datetime.utcnow()
 
