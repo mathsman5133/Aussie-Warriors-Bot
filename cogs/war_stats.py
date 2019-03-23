@@ -682,10 +682,9 @@ class WarStats(commands.Cog):
                         await channel.send(embed=e)
                     else:
                         await channel.send('war-roles-auto done')
-
-                    self.bot.war_roles = 'false'
-                    self.bot.loaded['warRoles'] = 'false'
-                    await self.bot.save_json()
+                        self.bot.war_roles = 'false'
+                        self.bot.loaded['warRoles'] = 'false'
+                        await self.bot.save_json()
 
                 if status in ['inWar', 'warEnded', 'notInWar']:
                     self.bot.war_roles = 'true'
