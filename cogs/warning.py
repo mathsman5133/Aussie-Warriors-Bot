@@ -152,7 +152,8 @@ class Warnings(commands.Cog):
             user = self.bot.get_user(n['user_id'])
             expires_in = time.human_timedelta(n['expires'])
             e.add_field(name=f"{str(user)}: Warning No. {n['id']}",
-                        value=f"{n['reason']}\nExpires in {expires_in}\n\n")
+                        value=f"{n['reason']}\nExpires in {expires_in}\n\n",
+                        inline=True)
 
         e.set_footer(text=f'Total Warnings: {len(dump)}').timestamp = datetime.datetime.utcnow()
 
