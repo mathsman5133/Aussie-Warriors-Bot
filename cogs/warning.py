@@ -31,13 +31,15 @@ class Warnings(commands.Cog):
             await ctx.send(f'Missing required argument {error}!')
             await ctx.show_help()
 
+        await ctx.show_help()
+
     def cog_unload(self):
         # self.wait_for_timers_task.cancel()
         pass
 
-    @commands.group(name='warn', aliases=['warnings'])
+    @commands.group(name='warn', aliases=['warnings'], invoke_without_command=True)
     @checks.is_leader()
-    async def _warnings(self, ctx, user, *, reason=None):
+    async def _warnings(self, ctx):
         """[Group] Manage Server Specific Warnings
 
         Invoke without a subcommand to warn someone with a reason (same as `warn add`)
