@@ -41,7 +41,7 @@ class Warnings(commands.Cog):
 
         Invoke without a subcommand to warn someone with a reason (same as `warn add`)
 
-        Usage: `{ctx.prefix}warn [user] [reason: optional]`
+        Usage: `warn [user] [reason: optional]`
 
         You must have `Leadership Team` role to use these commands.
         """
@@ -52,7 +52,7 @@ class Warnings(commands.Cog):
     async def add(self, ctx, user: discord.Member, *, reason=None):
         """Add a warning to a member
 
-        Usage: `{ctx.prefix}warn add [user] [reason: optional]`
+        Usage: `warn add [user] [reason: optional]`
 
         You must have `Leadership Team` role to use these commands.
         """
@@ -99,10 +99,10 @@ class Warnings(commands.Cog):
     async def remove(self, ctx, *warning_ids: int):
         """Remove warning(s) by ID
 
-        Usage: `{ctx.prefix}warn remove [ids to remove seperates by a space]`
-        Example: `{ctx.prefix}warn remove 1 21 3 4 53`
+        Usage: `warn remove [ids to remove seperates by a space]`
+        Example: `warn remove 1 21 3 4 53`
 
-        ID can be found by using `{ctx.prefix}warns [user]` or `{ctx.prefix}warn show [user]`.
+        ID can be found by using `warns [user]` or `warn show [user]`.
 
         You must have `Leadership Team` role to use these commands.
         """
@@ -115,8 +115,8 @@ class Warnings(commands.Cog):
     async def _clear(self, ctx, *users: discord.Member):
         """Clear warnings for member(s)
 
-        Usage: `{ctx.prefix}warn clear [users seperated by a space]`
-        Eg. `{ctx.prefix}warn clear @mathsman @lil @rah @proto`
+        Usage: `warn clear [users seperated by a space]`
+        Eg. `warn clear @mathsman @lil @rah @proto`
 
         You must have `Leadership Team` role to use these commands.
         """
@@ -129,7 +129,7 @@ class Warnings(commands.Cog):
     async def show(self, ctx, user: discord.Member=None):
         """Show warnings for a member
 
-        Usage: `{ctx.prefix}warn show [user: optional]`
+        Usage: `warn show [user: optional]`
 
         Specify no user to get all active warnings.
 
@@ -164,7 +164,7 @@ class Warnings(commands.Cog):
     async def warns(self, ctx, user: discord.Member=None):
         """Show warnings for a member
 
-        Usage: `{ctx.prefix}warn show [user: optional]`
+        Usage: `warn show [user: optional]`
 
         Specify no user to get all active warnings.
 
