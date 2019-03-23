@@ -69,6 +69,10 @@ class Warnings(commands.Cog):
                                      db_reason, ctx.message.created_at,
                                      datetime.timedelta(days=7))
 
+        query = "SELECT * FROM warnings WHERE user_id = $1 AND active = True"
+        n = await ctx.db.fetch(query)
+        warning_no = len(n) + 1 if n else 1
+
         await ctx.message.delete()
 
         try:
@@ -78,13 +82,13 @@ class Warnings(commands.Cog):
 
         e = discord.Embed(colour=0x36393E)
         e.set_author(name=str(user), icon_url=user.avatar_url)
-        e.add_field(name=f'Warning No.{dump[0]}',
+        e.add_field(name=f'Warning No.{warning_no}',
                     value=str(user))
         e.add_field(name='Moderator',
                     value=ctx.author.mention)
         e.add_field(name='Reason',
                     value=reason or 'No Reason')
-        e.set_footer(text='This warning will expire in 7d').timestamp = datetime.datetime.utcnow()
+        e.set_footer(text=f'Warning ID: {dump[0]}.This warning will expire in 7d').timestamp = datetime.datetime.utcnow()
 
         channel = self.bot.get_channel(self.LEADER_NOTES_ROOM)
         await channel.send(embed=e)
@@ -148,7 +152,7 @@ class Warnings(commands.Cog):
             user = self.bot.get_user(n['user_id'])
             expires_in = time.human_timedelta(n['expires'])
             e.add_field(name=f"{str(user)}: Warning No. {n['id']}",
-                        value=f"{n['reason']}\nExpires in {expires_in}\n")
+                        value=f"{n['reason']}\nExpires in {expires_in}\n\n")
 
         e.set_footer(text=f'Total Warnings: {len(dump)}').timestamp = datetime.datetime.utcnow()
 
