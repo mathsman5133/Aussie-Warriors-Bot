@@ -35,7 +35,7 @@ class Warnings(commands.Cog):
         # self.wait_for_timers_task.cancel()
         pass
 
-    @commands.group(name='warn', aliases=['warnings'], invoke_without_command=True)
+    @commands.group(name='warn', aliases=['warnings'])
     @checks.is_leader()
     async def _warnings(self, ctx, user, *, reason=None):
         """[Group] Manage Server Specific Warnings
