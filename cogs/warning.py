@@ -45,7 +45,7 @@ class Warnings(commands.Cog):
         You must have `manage_guild` permissions
         """
         if ctx.invoked_subcommand is None:
-            user = commands.MemberConverter().convert(ctx, user)
+            user = await commands.MemberConverter().convert(ctx, user)
             await ctx.invoke(self.bot.get_command('warn add'), user=user, reason=reason)
 
     @_warnings.command()
