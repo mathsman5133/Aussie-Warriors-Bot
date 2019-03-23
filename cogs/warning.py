@@ -30,10 +30,10 @@ class Warnings(commands.Cog):
             await ctx.send(f'Missing required argument {error}!')
             await ctx.show_help()
 
-    async def cog_unload(self):
+    def cog_unload(self):
         self.wait_for_timers_task.cancel()
 
-    @commands.group(name='warn', aliases=['warnings'], invoke_without_subcommand=True)
+    @commands.group(name='warn', aliases=['warnings'], invoke_without_command=True)
     @checks.manage_server()
     async def _warnings(self, ctx, user, *, reason=None):
         """[Group] Manage Server Specific Warnings
