@@ -96,6 +96,13 @@ class Warnings(commands.Cog):
         channel = self.bot.get_channel(self.LEADER_NOTES_ROOM)
         await channel.send(embed=e)
 
+        if warning_no < 4:
+            return
+
+        ctx.channel = channel
+        await ctx.invoke(self.bot.get_command('warn show'), user=user)
+        await channel.send(f'<@&390067025395056650>, {str(user)} has reached 4 strikes.')
+
     @_warnings.command(aliases=['delete'])
     async def remove(self, ctx, *warning_ids: int):
         """Remove warning(s) by ID
