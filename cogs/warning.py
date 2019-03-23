@@ -35,26 +35,26 @@ class Warnings(commands.Cog):
         self.wait_for_timers_task.cancel()
 
     @commands.group(name='warn', aliases=['warnings'], invoke_without_command=True)
-    @checks.manage_server()
+    @checks.is_leader()
     async def _warnings(self, ctx, user: discord.Member, *, reason=None):
         """[Group] Manage Server Specific Warnings
 
         Invoke without a subcommand to warn someone with a reason (same as `warn add`)
 
-        Usage: `warn [user] [reason: optional]`
+        Usage: `{ctx.prefix}warn [user] [reason: optional]`
 
-        You must have `manage_guild` permissions
+        You must have `Leadership Team` role to use these commands.
         """
         if ctx.invoked_subcommand is None:
             await ctx.invoke(self.bot.get_command('warn add'), user=user, reason=reason)
 
     @_warnings.command()
     async def add(self, ctx, user: discord.Member, *, reason=None):
-        """Add a warning to a member - server specific
+        """Add a warning to a member
 
-        Usage: `warn add [user] [reason: optional]`
+        Usage: `{ctx.prefix}warn add [user] [reason: optional]`
 
-        You must have `manage_guild` permissions
+        You must have `Leadership Team` role to use these commands.
         """
         if not reason:
             db_reason = f'Warned by {str(ctx.author)} (no reason)'
@@ -97,13 +97,14 @@ class Warnings(commands.Cog):
 
     @_warnings.command(aliases=['delete'])
     async def remove(self, ctx, *warning_ids: int):
-        """Remove a warning from a member
+        """Remove warning(s) by ID
 
-        Usage: `warn add [id to remove]`
+        Usage: `{ctx.prefix}warn remove [ids to remove seperates by a space]`
+        Example: `{ctx.prefix}warn remove 1 21 3 4 53`
 
-        ID can be found by using `warns [user]` or `warn show [user]` and is the number before the warning.
+        ID can be found by using `{ctx.prefix}warns [user]` or `{ctx.prefix}warn show [user]`.
 
-        You must have `manage_guild` permissions
+        You must have `Leadership Team` role to use these commands.
         """
         query = f"UPDATE warnings SET active=False WHERE id IN {list_to_sql_tuple(warning_ids)}"
         await ctx.db.execute(query)
@@ -112,11 +113,12 @@ class Warnings(commands.Cog):
 
     @_warnings.command(name='clear')
     async def _clear(self, ctx, *users: discord.Member):
-        """Clear warnings for a member - server specific
+        """Clear warnings for member(s)
 
-        Usage: `warn clear [user]`
+        Usage: `{ctx.prefix}warn clear [users seperated by a space]`
+        Eg. `{ctx.prefix}warn clear @mathsman @lil @rah @proto`
 
-        You must have `manage_guild` permissions
+        You must have `Leadership Team` role to use these commands.
         """
         query = f"UPDATE warnings SET active=False WHERE user_id IN {list_to_sql_tuple([n.id for n in users])}"
         await ctx.db.execute(query)
@@ -127,11 +129,11 @@ class Warnings(commands.Cog):
     async def show(self, ctx, user: discord.Member=None):
         """Show warnings for a member
 
-        Usage: `warn show [user: optional]`
+        Usage: `{ctx.prefix}warn show [user: optional]`
 
-        Specify no user to get warnings of yourself.
+        Specify no user to get all active warnings.
 
-        You must have `manage_guild` permissions
+        You must have `Leadership Team` role to use these commands.
         """
 
         if not user:
@@ -162,11 +164,11 @@ class Warnings(commands.Cog):
     async def warns(self, ctx, user: discord.Member=None):
         """Show warnings for a member
 
-        Usage: `warn show [user: optional]`
+        Usage: `{ctx.prefix}warn show [user: optional]`
 
         Specify no user to get all active warnings.
 
-        You must have `manage_guild` permissions
+        You must have `Leadership Team` role to use these commands.
         """
         await ctx.invoke(self.bot.get_command('warn show'), user=user)
 

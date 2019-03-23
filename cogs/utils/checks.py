@@ -63,6 +63,16 @@ def manage_channels():
 
     return commands.check(pred)
 
+def is_leader():
+    leader_role = 390067025395056650
+    def pred(ctx):
+        if is_owner_pred(ctx):
+            return True
+
+        if leader_role in [n.id for n in ctx.author.roles]:
+            return True
+        return False
+    return commands.check(pred)
 
 def mod_commands():
     def pred(ctx):
