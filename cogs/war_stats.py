@@ -56,8 +56,8 @@ class WarStats(commands.Cog):
             await ctx.send(embed=e)
 
     def cog_unload(self):
-        asyncio.get_event_loop().run_until_complete(self.stats_updater_task.cancel)
-        asyncio.get_event_loop().run_until_complete(self.role_adder_task.cancel)
+        self.stats_updater_task.cancel()
+        self.role_adder_task.cancel()
 
     @commands.command()
     @checks.manage_server()

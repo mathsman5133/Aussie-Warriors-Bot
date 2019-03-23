@@ -44,13 +44,10 @@ class Update(commands.Cog):
             await ctx.send(f'Missing required argument {error}!')
             await ctx.show_help()
 
-    async def cog_unload(self):
-        async def do():
-            await self.auto_daily_task.cancel()
-            await self.auto_monthly_task.cancel()
-            await self.auto_pings_task.cancel()
-
-        asyncio.get_event_loop().run_until_complete(do)
+    def cog_unload(self):
+        self.auto_daily_task.cancel()
+        self.auto_monthly_task.cancel()
+        self.auto_pings_task.cancel()
 
     @commands.command()
     @checks.manage_server()
