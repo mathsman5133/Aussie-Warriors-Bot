@@ -63,8 +63,8 @@ class Warnings(commands.Cog):
 
         query = "INSERT INTO warnings " \
                 "(user_id, reason, timestamp, expires, active)" \
-                "VALUES ($1, $2, $3, $4, (CURRENT_DATE+$5::interval), True);"
-        await ctx.db.execute(query, user.id, ctx.author.id,
+                "VALUES ($1, $3, $4, (CURRENT_DATE+$5::interval), True);"
+        await ctx.db.execute(query, user.id,
                              db_reason, ctx.message.created_at,
                              datetime.timedelta(days=7))
 
