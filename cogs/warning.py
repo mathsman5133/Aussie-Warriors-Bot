@@ -71,7 +71,10 @@ class Warnings(commands.Cog):
 
         await ctx.message.delete()
 
-        await user.send(f"You have been warned by {str(ctx.author)} for: {reason or 'No Reason'}")
+        try:
+            await user.send(f"You have been warned by {str(ctx.author)} for: {reason or 'No Reason'}")
+        except discord.Forbidden:
+            pass
 
         e = discord.Embed(colour=0x36393E)
         e.set_author(name=str(user), icon_url=user.avatar_url)
