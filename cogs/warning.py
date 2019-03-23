@@ -135,18 +135,20 @@ class Warnings(commands.Cog):
         """
 
         if not user:
-            query = "SELECT id, reason, expires FROM warnings WHERE active = True"
+            query = "SELECT id, reason, expires, user_id FROM warnings WHERE active = True"
             dump = await ctx.db.fetch(query)
         else:
-            query = "SELECT id, reason, expires FROM warnings WHERE user_id=$1 AND active = True"
+            query = "SELECT id, reason, expires, user_id FROM warnings WHERE user_id=$1 AND active = True"
             dump = await ctx.db.fetch(query, user.id)
 
         e = discord.Embed(colour=0x36393E)
         e.title = 'Active Warnings:'
+        e.description = '\u200b'
         for n in dump:
+            user = self.bot.get_user(n['user_id'])
             expires_in = time.human_timedelta(n['expires'])
-            e.add_field(name=f"Warning No. {n['id']}",
-                        value=f"{n['reason']}\n\nExpires in {expires_in}")
+            e.add_field(name=f"{str(user)}: Warning No. {n['id']}",
+                        value=f"{n['reason']}\nExpires in {expires_in}\n")
 
         e.set_footer(text=f'Total Warnings: {len(dump)}').timestamp = datetime.datetime.utcnow()
 
