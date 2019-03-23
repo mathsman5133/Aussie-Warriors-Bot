@@ -146,6 +146,9 @@ class Warnings(commands.Cog):
             dump = await ctx.db.fetch(query, user.id)
 
         e = discord.Embed(colour=0x36393E)
+        if user:
+            e.set_author(name=str(user), icon_url=user.avatar_url)
+
         e.title = 'Active Warnings:'
         e.description = '\u200b'
         for n in dump:
