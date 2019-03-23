@@ -1,6 +1,6 @@
 from discord.ext import commands
 import discord
-from cogs.utils import db, checks, time
+from cogs.utils import db, checks, time, help
 import datetime
 import asyncio
 from cogs.war_admin import list_to_sql_tuple
@@ -20,7 +20,7 @@ class Warnings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.LEADER_NOTES_ROOM = 410036214780133398
-        self.wait_for_timers_task = self.bot.loop.create_task(self.wait_for_timers())
+        # self.wait_for_timers_task = self.bot.loop.create_task(self.wait_for_timers())
 
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
@@ -32,7 +32,8 @@ class Warnings(commands.Cog):
             await ctx.show_help()
 
     def cog_unload(self):
-        self.wait_for_timers_task.cancel()
+        # self.wait_for_timers_task.cancel()
+        pass
 
     @commands.group(name='warn', aliases=['warnings'], invoke_without_command=True)
     @checks.is_leader()
@@ -90,7 +91,7 @@ class Warnings(commands.Cog):
                     value=ctx.author.mention)
         e.add_field(name='Reason',
                     value=reason or 'No Reason')
-        e.set_footer(text=f'Warning ID: {dump[0]}.This warning will expire in 7d').timestamp = datetime.datetime.utcnow()
+        e.set_footer(text=f'Warning ID: {dump[0]}.').timestamp = datetime.datetime.utcnow()
 
         channel = self.bot.get_channel(self.LEADER_NOTES_ROOM)
         await channel.send(embed=e)
@@ -137,28 +138,26 @@ class Warnings(commands.Cog):
         """
 
         if not user:
-            query = "SELECT id, reason, expires, user_id FROM warnings WHERE active = True"
+            query = "SELECT id, reason, expires, user_id FROM warnings WHERE active = True ORDER BY timestamp DESC"
             dump = await ctx.db.fetch(query)
         else:
-            query = "SELECT id, reason, expires, user_id FROM warnings WHERE user_id=$1 AND active = True"
+            query = "SELECT id, reason, expires, user_id FROM warnings " \
+                    "WHERE user_id=$1 AND active = True ORDER BY timestamp DESC"
             dump = await ctx.db.fetch(query, user.id)
 
-        e = discord.Embed(colour=0x36393E)
-        if user:
-            e.set_author(name=str(user), icon_url=user.avatar_url)
-
-        e.title = 'Active Warnings:'
-        e.description = '\u200b'
+        embed_fields = []
         for n in dump:
             user = self.bot.get_user(n['user_id'])
             expires_in = time.human_timedelta(n['expires'])
-            e.add_field(name=f"{str(user)}: Warning ID {n['id']}",
-                        value=f"{n['reason']}\nExpires in {expires_in}\n\n",
-                        inline=False)
+            embed_fields.append((f"{str(user)}: Warning ID {n['id']}", n['reason']))
 
-        e.set_footer(text=f'Total Warnings: {len(dump)}').timestamp = datetime.datetime.utcnow()
+        pages = help.FieldPages(ctx, entries=embed_fields)
+        pages.embed.timestamp = datetime.datetime.utcnow()
+        pages.embed.title = 'All Warnings:'
+        if user:
+            pages.embed.set_author(name=str(user), icon_url=user.avatar_url)
 
-        await ctx.send(embed=e)
+        await pages.paginate()
 
     @commands.command(hidden=True)
     async def warns(self, ctx, user: discord.Member=None):
@@ -179,7 +178,7 @@ class Warnings(commands.Cog):
         e = discord.Embed(colour=0x36393E)
         e.set_author(name=str(user), icon_url=user.avatar_url)
         e.title = 'Automatic Warning Removal'
-        e.add_field(name=f"Warning No.{dump['id']}",
+        e.add_field(name=f"Warning ID.{dump['id']}",
                     value=f"{dump['reason']}")
         e.timestamp = datetime.datetime.utcnow()
 
