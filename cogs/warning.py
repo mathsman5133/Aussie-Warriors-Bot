@@ -35,7 +35,7 @@ class Warnings(commands.Cog):
 
     @commands.group(name='warn', aliases=['warnings'], invoke_without_subcommand=True)
     @checks.manage_server()
-    async def _warnings(self, ctx, user: discord.Member, *, reason=None):
+    async def _warnings(self, ctx, user, *, reason=None):
         """[Group] Manage Server Specific Warnings
 
         Invoke without a subcommand to warn someone with a reason (same as `warn add`)
@@ -45,6 +45,7 @@ class Warnings(commands.Cog):
         You must have `manage_guild` permissions
         """
         if ctx.invoked_subcommand is None:
+            user = commands.MemberConverter().convert(ctx, user)
             await ctx.invoke(self.bot.get_command('warn add'), user=user, reason=reason)
 
     @_warnings.command()
@@ -63,18 +64,18 @@ class Warnings(commands.Cog):
 
         query = "INSERT INTO warnings " \
                 "(user_id, reason, timestamp, expires, active)" \
-                "VALUES ($1, $2, $3, (CURRENT_DATE+$4::interval), True);"
-        await ctx.db.execute(query, user.id,
-                             db_reason, ctx.message.created_at,
-                             datetime.timedelta(days=7))
+                "VALUES ($1, $2, $3, (CURRENT_DATE+$4::interval), True) RETURNING id;"
+        dump = await ctx.db.fetchrow(query, user.id,
+                                     db_reason, ctx.message.created_at,
+                                     datetime.timedelta(days=7))
 
         await ctx.message.delete()
 
-        await user.send(f"You have been warned by {str(ctx.author)}  for: {reason or 'No Reason'}")
+        await user.send(f"You have been warned by {str(ctx.author)} for: {reason or 'No Reason'}")
 
         e = discord.Embed(colour=0x36393E)
         e.set_author(name=str(user), icon_url=user.avatar_url)
-        e.add_field(name='User',
+        e.add_field(name=f'Warning No.{dump[0]}',
                     value=str(user))
         e.add_field(name='Moderator',
                     value=ctx.author.mention)
