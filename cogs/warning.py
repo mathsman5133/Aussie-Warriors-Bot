@@ -104,7 +104,7 @@ class Warnings(commands.Cog):
 
         You must have `manage_guild` permissions
         """
-        query = "SELECT * FROM warnings WHERE AND id = $1"
+        query = "SELECT * FROM warnings WHERE id = $1"
         dump = await ctx.db.fetchrow(query, warning_id)
 
         if not dump:
@@ -155,7 +155,7 @@ class Warnings(commands.Cog):
         for n in dump:
             user = self.bot.get_user(n['user_id'])
             expires_in = time.human_timedelta(n['expires'])
-            e.add_field(name=f"{str(user)}: Warning No. {n['id']}",
+            e.add_field(name=f"{str(user)}: Warning ID {n['id']}",
                         value=f"{n['reason']}\nExpires in {expires_in}\n\n",
                         inline=False)
 
