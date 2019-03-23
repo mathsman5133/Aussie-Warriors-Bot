@@ -689,7 +689,7 @@ class WarStats(commands.Cog):
 
                 if status in ['inWar', 'warEnded', 'notInWar']:
                     self.bot.war_roles = 'true'
-                    self.bot.loaded['war_roles'] = 'true'
+                    self.bot.loaded['warRoles'] = 'true'
                     await self.bot.save_json()
 
                 if ts:
