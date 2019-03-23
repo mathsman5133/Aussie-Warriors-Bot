@@ -154,9 +154,9 @@ class Warnings(commands.Cog):
 
         embed_fields = []
         for n in dump:
-            user = self.bot.get_user(n['user_id'])
+            uuser = self.bot.get_user(n['user_id'])
             expires_in = time.human_timedelta(n['expires'])
-            embed_fields.append((f"{str(user)}: Warning ID {n['id']}", n['reason']))
+            embed_fields.append((f"{str(uuser)}: Warning ID {n['id']}", n['reason']))
 
         pages = help.FieldPages(ctx, entries=embed_fields)
         pages.embed.timestamp = datetime.datetime.utcnow()
