@@ -25,13 +25,14 @@ class Warnings(commands.Cog):
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             e = discord.Embed(colour=discord.Colour.red())
-            e.description = error
+            e.description = str(error)
             await ctx.send(embed=e)
+            await ctx.show_help()
+
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(f'Missing required argument {error}!')
             await ctx.show_help()
 
-        await ctx.show_help()
 
     def cog_unload(self):
         # self.wait_for_timers_task.cancel()
