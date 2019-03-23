@@ -135,7 +135,7 @@ class Warnings(commands.Cog):
             query = "SELECT id, reason, expires FROM warnings WHERE active = True"
             dump = await ctx.db.fetch(query)
         else:
-            query = "SELECT id, reason, expires FROM warnings WHERE AND user_id=$1 AND active = True"
+            query = "SELECT id, reason, expires FROM warnings WHERE user_id=$1 AND active = True"
             dump = await ctx.db.fetch(query, user.id)
 
         e = discord.Embed(colour=0x36393E)
