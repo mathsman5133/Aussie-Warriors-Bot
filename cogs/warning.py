@@ -70,8 +70,8 @@ class Warnings(commands.Cog):
                                      datetime.timedelta(days=7))
 
         query = "SELECT * FROM warnings WHERE user_id = $1 AND active = True"
-        n = await ctx.db.fetch(query)
-        warning_no = len(n) + 1 if n else 1
+        n = await ctx.db.fetch(query, user.id)
+        warning_no = len(n)
 
         await ctx.message.delete()
 
