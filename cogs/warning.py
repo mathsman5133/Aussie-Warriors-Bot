@@ -63,10 +63,12 @@ class Warnings(commands.Cog):
 
         query = "INSERT INTO warnings " \
                 "(user_id, reason, timestamp, expires, active)" \
-                "VALUES ($1, $2, $3, (CURRENT_TIME+$4::interval), True) RETURNING id;"
+                "VALUES ($1, $2, $3, $4, True) RETURNING id;"
+        td = datetime.datetime.utcnow() + datetime.timedelta(days=7)
+
         dump = await ctx.db.fetchrow(query, user.id,
                                      db_reason, ctx.message.created_at,
-                                     datetime.timedelta(days=7))
+                                     td)
 
         query = "SELECT * FROM warnings WHERE user_id = $1 AND active = True"
         n = await ctx.db.fetch(query, user.id)
