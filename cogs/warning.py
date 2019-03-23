@@ -35,7 +35,7 @@ class Warnings(commands.Cog):
 
     @commands.group(name='warn', aliases=['warnings'], invoke_without_command=True)
     @checks.manage_server()
-    async def _warnings(self, ctx, user, *, reason=None):
+    async def _warnings(self, ctx, user: discord.Member, *, reason=None):
         """[Group] Manage Server Specific Warnings
 
         Invoke without a subcommand to warn someone with a reason (same as `warn add`)
@@ -45,7 +45,6 @@ class Warnings(commands.Cog):
         You must have `manage_guild` permissions
         """
         if ctx.invoked_subcommand is None:
-            user = await commands.MemberConverter().convert(ctx, user)
             await ctx.invoke(self.bot.get_command('warn add'), user=user, reason=reason)
 
     @_warnings.command()
