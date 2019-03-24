@@ -332,9 +332,11 @@ class WarStats(commands.Cog):
         return attacks_added
 
     async def final_war_stats(self, tag):
-        query = "SELECT * FROM temp_stats WHERE enemy_clan_tag = $1 AND our_hit = $1"
-        our_hits = await self.bot.pool.execute(query, tag, True)
-        opponent_hits = await self.bot.pool.execute(query, tag, False)
+        query = "SELECT * FROM temp_stats WHERE enemy_clan_tag = $1 AND our_hit = True"
+        our_hits = await self.bot.pool.execute(query, tag)
+
+        query = "SELECT * FROM temp_stats WHERE enemy_clan_tag = $1 AND our_hit = False"
+        opponent_hits = await self.bot.pool.execute(query, tag)
 
         if not our_hits:
             return False
