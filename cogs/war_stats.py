@@ -280,12 +280,13 @@ class WarStats(commands.Cog):
     async def temporory_war_stats(self):
         attacks_added = 0
 
-        query = "SELECT attack_number FROM temp_stats"
-        dump = await self.bot.pool.fetch(query)
-        att_orders = [n[0] for n in dump]
+        query = "SELECT attack_number FROM temp_stats WHERE enemy_clan_tag = $1"
 
         current_war = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
         enemy_clan_tag = current_war['opponent']['tag']
+
+        dump = await self.bot.pool.fetch(query, enemy_clan_tag)
+        att_orders = [n[0] for n in dump]
 
         query = """INSERT INTO temp_stats 
                     (enemy_clan_tag, attack_number, enemy_tag, attacker_tag,
@@ -299,9 +300,7 @@ class WarStats(commands.Cog):
                 return None
 
             for attack in member['attacks']:
-                if not dump:
-                    pass
-                elif attack['attack_number'] in att_orders:
+                if attack['order'] in att_orders:
                     return None
 
                 enemy_th = self.getTownHallLevel(attack['defenderTag'], current_war)
