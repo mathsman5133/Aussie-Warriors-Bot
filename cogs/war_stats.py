@@ -292,7 +292,8 @@ class WarStats(commands.Cog):
                     (enemy_clan_tag, attack_number, enemy_tag, attacker_tag,
                      name, th, enemy_th, stars, percent, our_hit)
                     VALUES ($1, $2, $3, $4,
-                            $5, $6, $7, $8)
+                            $5, $6, $7, $8,
+                            $9, $10)
                 """
 
         async def add_attacks(our_hit: bool):
