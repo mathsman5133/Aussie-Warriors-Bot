@@ -299,7 +299,9 @@ class WarStats(commands.Cog):
                 return None
 
             for attack in member['attacks']:
-                if attack['attack_number'] in att_orders:
+                if not dump:
+                    pass
+                elif attack['attack_number'] in att_orders:
                     return None
 
                 enemy_th = self.getTownHallLevel(attack['defenderTag'], current_war)
