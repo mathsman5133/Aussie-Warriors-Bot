@@ -307,7 +307,7 @@ class WarStats(commands.Cog):
 
                 await self.bot.pool.execute(query,
                                             enemy_clan_tag,
-                                            attack['attack_number'],
+                                            attack['order'],
                                             attack['defenderTag'],
                                             member['tag'],
                                             member['name'],
