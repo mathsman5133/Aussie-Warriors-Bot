@@ -50,7 +50,7 @@ class Update(commands.Cog):
         self.auto_pings_task.cancel()
 
     @commands.command()
-    @checks.manage_server()
+    @checks.is_leader()
     @checks.mod_commands()
     async def update_required(self, ctx):
         """Manually update the required donations by today
@@ -59,7 +59,7 @@ class Update(commands.Cog):
         await ctx.message.add_reaction('\u2705')
 
     @commands.command(name='refavg')
-    @checks.manage_server()
+    @checks.is_leader()
     @checks.mod_commands()
     async def _refresh_avg(self, ctx):
         """Manually refresh the averages of all accounts in the database
@@ -70,7 +70,7 @@ class Update(commands.Cog):
         await ctx.message.add_reaction('\u2705')
 
     @commands.command(name='upd')
-    @checks.manage_server()
+    @checks.is_leader()
     @checks.mod_commands()
     async def _update(self, ctx):
         """Manually update the donations of all accounts in the database
@@ -95,7 +95,7 @@ class Update(commands.Cog):
         )
 
     @commands.command(name='manreset')
-    @checks.manage_server()
+    @checks.is_leader()
     @checks.mod_commands()
     async def manual_reset(self, ctx):
         """Manually resets the season of donations in the database
