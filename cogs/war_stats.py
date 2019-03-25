@@ -396,7 +396,7 @@ class WarStats(commands.Cog):
         query = "DELETE FROM war_stats WHERE war_no>20;"
         await self.bot.pool.execute(query)
 
-        insert_rows = ', '.join(n for n in sql_tuples)
+        insert_rows = ', '.join(str(n) for n in sql_tuples)
         query = f"""INSERT INTO war_stats 
                     (war_no, name, tag, th,
                      hitrate, defenserate) VALUES {insert_rows};"""
