@@ -345,10 +345,16 @@ class WarStats(commands.Cog):
         enemy_hits = {}
 
         for attack in our_hits:
-            member_hits[attack['attacker_tag']].append(attack)
+            if attack['attacker_tag'] in member_hits.keys():
+                member_hits[attack['attacker_tag']].append(attack)
+            else:
+                member_hits[attack['attacker_tag']] = attack
 
         for attack in opponent_hits:
-            enemy_hits[attack['enemy_tag']].append(attack)
+            if attack['enemy_tag'] in enemy_hits.keys():
+                enemy_hits[attack['enemy_tag']].append(attack)
+            else:
+                enemy_hits[attack['enemy_tag']] = attack
 
         sql_tuples = []
 
@@ -363,6 +369,7 @@ class WarStats(commands.Cog):
                 if attack['th'] == attack['enemy_th']:
                     hit = 1 if attack['stars'] == 3 else 0
                     successful_hits.append(hit)
+
             if member['attacker_tag'] in enemy_hits.keys():
                 for attack in enemy_hits[member['attacker_tag']]:
                     if attack['th'] != attack['enemy_th']:
