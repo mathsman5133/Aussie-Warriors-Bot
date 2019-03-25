@@ -358,13 +358,18 @@ class WarStats(commands.Cog):
 
         sql_tuples = []
 
+        print(member_hits)
+
         for member in member_hits:
             successful_hits = []
             defended_attacks = 0
             total_attacks_on_base = 0
 
+            print(member)
+
             # Loop over every attack by member
             for attack in member:
+                print(attack)
                 # Only count attack if either player th = enemy th
                 if attack['th'] == attack['enemy_th']:
                     hit = 1 if attack['stars'] == 3 else 0
