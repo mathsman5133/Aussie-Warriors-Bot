@@ -345,7 +345,7 @@ class WarStats(commands.Cog):
         enemy_hits = {}
 
         for attack in our_hits:
-            member_hits[attack['tag']].append(attack)
+            member_hits[attack['attacker_tag']].append(attack)
 
         for attack in opponent_hits:
             enemy_hits[attack['enemy_tag']].append(attack)
@@ -363,7 +363,7 @@ class WarStats(commands.Cog):
                 if attack['th'] == attack['enemy_th']:
                     hit = 1 if attack['stars'] == 3 else 0
                     successful_hits.append(hit)
-            for attack in enemy_hits[member['tag']]:
+            for attack in enemy_hits[member['attacker_tag']]:
                 if attack['th'] != attack['enemy_th']:
                     continue
 
