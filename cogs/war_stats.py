@@ -382,7 +382,7 @@ class WarStats(commands.Cog):
             hr = f'{sum(successful_hits)}/{(len(successful_hits))}'
             war_no = 1
             player_name = member[0]['name']
-            player_tag = member[0]['tag']
+            player_tag = member[0]['attacker_tag']
             player_th = member[0]['th']
 
             dr = f'{defended_attacks}/{total_attacks_on_base}'
