@@ -95,8 +95,8 @@ class WarStats(commands.Cog):
         query = "DELETE FROM last_war WHERE enemy_clan_tag = $1"
 
         for tag in tags:
-            await self.final_war_stats(tag)
-            await self.bot.pool.execute(query, tag)
+            await self.final_war_stats(tag[0])
+            await self.bot.pool.execute(query, tag[0])
 
         await ctx.tick()
 
