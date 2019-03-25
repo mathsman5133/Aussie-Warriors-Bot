@@ -363,13 +363,14 @@ class WarStats(commands.Cog):
                 if attack['th'] == attack['enemy_th']:
                     hit = 1 if attack['stars'] == 3 else 0
                     successful_hits.append(hit)
-            for attack in enemy_hits[member['attacker_tag']]:
-                if attack['th'] != attack['enemy_th']:
-                    continue
+            if member['attacker_tag'] in enemy_hits.keys():
+                for attack in enemy_hits[member['attacker_tag']]:
+                    if attack['th'] != attack['enemy_th']:
+                        continue
 
-                total_attacks_on_base += 1
-                if attack['stars'] != 3:
-                    defended_attacks += 1
+                    total_attacks_on_base += 1
+                    if attack['stars'] != 3:
+                        defended_attacks += 1
 
             hr = f'{sum(successful_hits)}/{(len(successful_hits))}'
             war_no = 1
