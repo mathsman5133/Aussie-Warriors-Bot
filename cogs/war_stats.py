@@ -402,7 +402,7 @@ class WarStats(commands.Cog):
                      hitrate, defenserate) VALUES {insert_rows};"""
         await self.bot.pool.execute(query)
 
-        query = "DELETE FROM last_war WHERE enemy_clan_tag = $1"
+        query = "DELETE FROM temp_stats WHERE enemy_clan_tag = $1"
         await self.bot.pool.execute(query, tag)
 
         self.bot.loaded['updateStats'] = 'false'
