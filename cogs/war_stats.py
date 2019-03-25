@@ -370,8 +370,8 @@ class WarStats(commands.Cog):
                     hit = 1 if attack['stars'] == 3 else 0
                     successful_hits.append(hit)
 
-            if member['attacker_tag'] in enemy_hits.keys():
-                for attack in enemy_hits[member['attacker_tag']]:
+            if member[0]['attacker_tag'] in enemy_hits.keys():
+                for attack in enemy_hits[member[0]['attacker_tag']]:
                     if attack['th'] != attack['enemy_th']:
                         continue
 
@@ -381,8 +381,8 @@ class WarStats(commands.Cog):
 
             hr = f'{sum(successful_hits)}/{(len(successful_hits))}'
             war_no = 1
-            player_name = member['name']
-            player_tag = member['tag']
+            player_name = member[0]['name']
+            player_tag = member[0]['tag']
             player_th = member[0]['th']
 
             dr = f'{defended_attacks}/{total_attacks_on_base}'
