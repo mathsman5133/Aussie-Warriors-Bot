@@ -348,13 +348,13 @@ class WarStats(commands.Cog):
             if attack['attacker_tag'] in member_hits.keys():
                 member_hits[attack['attacker_tag']].append(attack)
             else:
-                member_hits[attack['attacker_tag']] = attack
+                member_hits[attack['attacker_tag']] = [attack]
 
         for attack in opponent_hits:
             if attack['enemy_tag'] in enemy_hits.keys():
                 enemy_hits[attack['enemy_tag']].append(attack)
             else:
-                enemy_hits[attack['enemy_tag']] = attack
+                enemy_hits[attack['enemy_tag']] = [attack]
 
         sql_tuples = []
 
