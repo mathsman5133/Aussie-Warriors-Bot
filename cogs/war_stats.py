@@ -583,7 +583,12 @@ class WarStats(commands.Cog):
                 warning_msg = None
                 warnings_sent = 0
 
-            return current_war['state'], warning_msg, warnings_sent, ts, current_war['opponent']['tag']
+            if current_war['state'] in ['preparation', 'inWar', 'warEnded']:
+                opponent_tag = current_war['opponent']['tag']
+            else:
+                opponent_tag = None
+
+            return current_war['state'], warning_msg, warnings_sent, ts, opponent_tag
 
         e = discord.Embed(colour=discord.Colour.red())
 
