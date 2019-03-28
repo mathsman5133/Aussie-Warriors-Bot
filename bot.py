@@ -145,29 +145,36 @@ class AWBot(commands.Bot):
         print(f'Ready: {self.user} (ID: {self.user.id})')
 
     async def on_command_error(self, ctx, error):
-        print('ok')
-        print(''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=False)))
-        # we dont want logs for this stuff which isnt our problem
-        ignored = (commands.NoPrivateMessage, commands.DisabledCommand, commands.CheckFailure,
-                   commands.CommandNotFound, commands.UserInputError, discord.Forbidden)
-        error = getattr(error, 'original', error)
-        # filter errors we dont want
-        if isinstance(error, ignored):
+        if not isinstance(error, commands.CommandInvokeError):
             return
-        # send error to log channel
+
+        error = error.original
+        if isinstance(error, (discord.Forbidden, discord.NotFound)):
+            return
+
         e = discord.Embed(title='Command Error', colour=0xcc3366)
         e.add_field(name='Name', value=ctx.command.qualified_name)
         e.add_field(name='Author', value=f'{ctx.author} (ID: {ctx.author.id})')
 
         fmt = f'Channel: {ctx.channel} (ID: {ctx.channel.id})'
-        if ctx.guild:
-            fmt = f'{fmt}\nGuild: {ctx.guild} (ID: {ctx.guild.id})'
 
         e.add_field(name='Location', value=fmt, inline=False)
-        # format legible traceback
+
         exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=False))
         e.description = f'```py\n{exc}\n```'
         e.timestamp = datetime.datetime.utcnow()
+        await self.webhook.send(embed=e)
+
+    async def on_error(self, event, *args, **kwargs):
+        e = discord.Embed(title='Event Error', colour=0xa32952)
+        e.add_field(name='Event', value=event)
+        e.description = f'```py\n{traceback.format_exc()}\n```'
+        e.timestamp = datetime.datetime.utcnow()
+
+        try:
+            await self.webhook.send(embed=e)
+        except:
+            pass
 
 
 if __name__ == '__main__':
