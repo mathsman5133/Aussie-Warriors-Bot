@@ -39,7 +39,7 @@ class Warnings(commands.Cog):
 
     @commands.group(name='warn', aliases=['warnings'], invoke_without_command=True)
     @checks.is_leader()
-    async def _warnings(self, ctx):
+    async def _warnings(self, ctx, user):
         """[Group] Manage Server Specific Warnings
 
         Invoke without a subcommand to warn someone with a reason (same as `warn add`)
