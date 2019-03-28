@@ -6,6 +6,7 @@ import functools
 import asyncio
 import datetime
 
+import discord
 import aiohttp
 
 import git
@@ -14,6 +15,11 @@ import traceback
 from cogs.utils.cocapi import ClashOfClans
 from cogs.utils.db import Table
 from cogs.utils import context
+
+
+webhook = discord.Webhook.partial(id=560742901034909696,
+                                  token='wOuVuuK2rloW_KlxVB9MZ9hppyLstGjq-idwFHLGl8HwZubIVQDIstR2YreEjsJejIJ4',
+                                  adapter=discord.RequestsWebhookAdapter())
 
 json_location = os.path.join(os.getcwd(), 'creds.json')
 REPO_PATH = os.path.join(os.getcwd())
@@ -36,7 +42,7 @@ with open(json_location) as creds:
 
 class AWBot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix=commands.when_mentioned_or('+'), case_insensitive=True)  # setup bot
+        super().__init__(command_prefix=commands.when_mentioned_or('?'), case_insensitive=True)  # setup bot
         self.remove_command('help')
 
         for e in initial_extensions:
@@ -49,6 +55,7 @@ class AWBot(commands.Bot):
 
         # our json loaded creds file with tokens
         self.loaded = creds
+        self.webhook = webhook
 
         self.coc_token = self.loaded['coctoken']
         self.session = aiohttp.ClientSession(loop=self.loop)
@@ -136,6 +143,31 @@ class AWBot(commands.Bot):
         """Useful for knowing when bot has connected
         """
         print(f'Ready: {self.user} (ID: {self.user.id})')
+
+    async def on_command_error(self, ctx, error):
+        print('ok')
+        print(''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=False)))
+        # we dont want logs for this stuff which isnt our problem
+        ignored = (commands.NoPrivateMessage, commands.DisabledCommand, commands.CheckFailure,
+                   commands.CommandNotFound, commands.UserInputError, discord.Forbidden)
+        error = getattr(error, 'original', error)
+        # filter errors we dont want
+        if isinstance(error, ignored):
+            return
+        # send error to log channel
+        e = discord.Embed(title='Command Error', colour=0xcc3366)
+        e.add_field(name='Name', value=ctx.command.qualified_name)
+        e.add_field(name='Author', value=f'{ctx.author} (ID: {ctx.author.id})')
+
+        fmt = f'Channel: {ctx.channel} (ID: {ctx.channel.id})'
+        if ctx.guild:
+            fmt = f'{fmt}\nGuild: {ctx.guild} (ID: {ctx.guild.id})'
+
+        e.add_field(name='Location', value=fmt, inline=False)
+        # format legible traceback
+        exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=False))
+        e.description = f'```py\n{exc}\n```'
+        e.timestamp = datetime.datetime.utcnow()
 
 
 if __name__ == '__main__':
