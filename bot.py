@@ -163,7 +163,7 @@ class AWBot(commands.Bot):
         exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=False))
         e.description = f'```py\n{exc}\n```'
         e.timestamp = datetime.datetime.utcnow()
-        await self.webhook.send(embed=e)
+        await webhook.send(embed=e)
 
     async def on_error(self, event, *args, **kwargs):
         e = discord.Embed(title='Event Error', colour=0xa32952)
@@ -172,7 +172,7 @@ class AWBot(commands.Bot):
         e.timestamp = datetime.datetime.utcnow()
 
         try:
-            await self.webhook.send(embed=e)
+            await webhook.send(embed=e)
         except:
             pass
 
