@@ -62,6 +62,7 @@ class WarStats(commands.Cog):
     @commands.command()
     @checks.manage_server()
     @checks.mod_commands()
+    @checks.clan_status(['preparation', 'inWar', 'warEnded'])
     async def dl_temp(self, ctx):
         """Updates attacks in the `temp_stats` table
 
