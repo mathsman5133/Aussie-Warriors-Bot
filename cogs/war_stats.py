@@ -302,7 +302,10 @@ class WarStats(commands.Cog):
                 return None
 
             for attack in member['attacks']:
-                self.bot.webhook.send(attack)
+                try:
+                    self.bot.webhook.send(attack)
+                except:
+                    pass
                 if attack['order'] in att_orders:
                     self.bot.webhook.send(f"Already Done: {attack['order']}")
                     return None
