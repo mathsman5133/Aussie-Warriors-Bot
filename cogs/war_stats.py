@@ -302,9 +302,9 @@ class WarStats(commands.Cog):
                 return None
 
             for attack in member['attacks']:
-                await self.bot.webhook.send(attack)
+                self.bot.webhook.send(attack)
                 if attack['order'] in att_orders:
-                    await self.bot.webhook.send(f"Already Done: {attack['order']}")
+                    self.bot.webhook.send(f"Already Done: {attack['order']}")
                     return None
 
                 enemy_th = self.getTownHallLevel(attack['defenderTag'], current_war)
