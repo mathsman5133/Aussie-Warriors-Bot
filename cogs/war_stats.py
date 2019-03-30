@@ -297,12 +297,14 @@ class WarStats(commands.Cog):
                             $9, $10)
                 """
 
-        async def add_attacks(user, our_hit: bool):
-            if 'attacks' not in user.keys():
+        async def add_attacks(our_hit: bool):
+            if 'attacks' not in member.keys():
                 return None
 
-            for attack in user['attacks']:
+            for attack in member['attacks']:
+                await self.bot.webhook.send(attack)
                 if attack['order'] in att_orders:
+                    await self.bot.webhook.send(f"Already Done: {attack['order']}")
                     return None
 
                 enemy_th = self.getTownHallLevel(attack['defenderTag'], current_war)
@@ -311,9 +313,9 @@ class WarStats(commands.Cog):
                                             enemy_clan_tag,
                                             attack['order'],
                                             attack['defenderTag'],
-                                            user['tag'],
-                                            user['name'],
-                                            user['townhallLevel'],
+                                            member['tag'],
+                                            member['name'],
+                                            member['townhallLevel'],
                                             enemy_th,
                                             attack['stars'],
                                             attack['destructionPercentage'],
@@ -321,12 +323,12 @@ class WarStats(commands.Cog):
                 return True
 
         for member in current_war['clan']['members']:
-            n = await add_attacks(member, True)
+            n = await add_attacks(True)
             if n:
                 attacks_added += 1
 
         for member in current_war['opponent']['members']:
-            n = await add_attacks(member, False)
+            n = await add_attacks(False)
             if n:
                 attacks_added += 1
 
