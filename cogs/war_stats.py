@@ -298,6 +298,10 @@ class WarStats(commands.Cog):
                 """
 
         async def add_attacks(our_hit: bool):
+            try:
+                self.bot.webhook.send(member)
+            except:
+                pass
             if 'attacks' not in member.keys():
                 return None
 
