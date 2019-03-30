@@ -297,11 +297,11 @@ class WarStats(commands.Cog):
                             $9, $10)
                 """
 
-        async def add_attacks(our_hit: bool):
-            if 'attacks' not in member.keys():
+        async def add_attacks(user, our_hit: bool):
+            if 'attacks' not in user.keys():
                 return None
 
-            for attack in member['attacks']:
+            for attack in user['attacks']:
                 if attack['order'] in att_orders:
                     return None
 
@@ -311,9 +311,9 @@ class WarStats(commands.Cog):
                                             enemy_clan_tag,
                                             attack['order'],
                                             attack['defenderTag'],
-                                            member['tag'],
-                                            member['name'],
-                                            member['townhallLevel'],
+                                            user['tag'],
+                                            user['name'],
+                                            user['townhallLevel'],
                                             enemy_th,
                                             attack['stars'],
                                             attack['destructionPercentage'],
@@ -321,12 +321,12 @@ class WarStats(commands.Cog):
                 return True
 
         for member in current_war['clan']['members']:
-            n = await add_attacks(True)
+            n = await add_attacks(member, True)
             if n:
                 attacks_added += 1
 
         for member in current_war['opponent']['members']:
-            n = await add_attacks(False)
+            n = await add_attacks(member, False)
             if n:
                 attacks_added += 1
 
