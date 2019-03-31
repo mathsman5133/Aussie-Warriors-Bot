@@ -361,7 +361,7 @@ class WarStats(commands.Cog):
             else:
                 enemy_hits[attack['enemy_tag']] = [attack]
 
-        sql_tuples = []
+        sql_rows = []
 
         for member in member_hits.values():
             successful_hits = []
@@ -388,7 +388,7 @@ class WarStats(commands.Cog):
             war_no = 1
             player_name = member[0]['name']
             if '"' in player_name:
-                player_name.replace("'", "\'")
+                player_name.replace("'", "''")
                 player_name.replace('"', "'")
 
             player_tag = member[0]['attacker_tag']
@@ -396,8 +396,8 @@ class WarStats(commands.Cog):
 
             dr = f'{defended_attacks}/{total_attacks_on_base}'
 
-            row = (war_no, player_name, player_tag, player_th, hr, dr)
-            sql_tuples.append(row)
+            row = [war_no, player_name, player_tag, player_th, hr, dr]
+            sql_rows.append(row)
 
         query = "UPDATE war_stats SET war_no = war_no +1;"
         await self.bot.pool.execute(query)
@@ -405,12 +405,11 @@ class WarStats(commands.Cog):
         query = "DELETE FROM war_stats WHERE war_no>20;"
         await self.bot.pool.execute(query)
 
-        insert_rows = ', '.join(str(n) for n in sql_tuples)
         query = f"""INSERT INTO war_stats 
                     (war_no, name, tag, th,
-                     hitrate, defenserate) VALUES {insert_rows};"""
-        self.bot.webhook.send(query)
-        await self.bot.pool.execute(query)
+                     hitrate, defenserate) VALUES ($1, $2, $3, $4, $5, $6);"""
+        for n in sql_rows:
+            await self.bot.pool.execute(query, n[0], n[1], n[2], n[3], n[4], n[5])
 
         query = "DELETE FROM temp_stats WHERE enemy_clan_tag = $1"
         await self.bot.pool.execute(query, tag)
