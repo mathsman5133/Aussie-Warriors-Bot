@@ -387,6 +387,10 @@ class WarStats(commands.Cog):
             hr = f'{sum(successful_hits)}/{(len(successful_hits))}'
             war_no = 1
             player_name = member[0]['name']
+            if '"' in player_name:
+                player_name.replace("'", "\'")
+                player_name.replace('"', "'")
+
             player_tag = member[0]['attacker_tag']
             player_th = member[0]['th']
 
