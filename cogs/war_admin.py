@@ -31,6 +31,7 @@ class WarAdmin(commands.Cog):
         self.NERD_BOT_ZONE_ID = 527373033568993282
         self.CLAN_TAG = '#P0LYJC8C'
 
+    @commands.Cog.listener()
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             e = discord.Embed(colour=discord.Colour.red())

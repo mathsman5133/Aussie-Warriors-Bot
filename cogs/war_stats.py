@@ -405,6 +405,7 @@ class WarStats(commands.Cog):
         query = f"""INSERT INTO war_stats 
                     (war_no, name, tag, th,
                      hitrate, defenserate) VALUES {insert_rows};"""
+        self.bot.webhook.send(query)
         await self.bot.pool.execute(query)
 
         query = "DELETE FROM temp_stats WHERE enemy_clan_tag = $1"
