@@ -208,7 +208,7 @@ class WarStats(commands.Cog):
         headers = ['Off HR', 'HR %', 'IGN', 'Def', 'Def %', 'Player Tag']
 
         for n in th:
-            stats = await self.statsForTh(str(n), owner_only_last_x_wars)
+            stats = await self.statsForTh(n, owner_only_last_x_wars)
 
             if not stats['overall']:
                 entries.append(f'__**No stats found for TH{n}v{n}. Sorry**__\n')
