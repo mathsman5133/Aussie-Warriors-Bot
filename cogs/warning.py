@@ -83,7 +83,7 @@ class Warnings(commands.Cog):
 
         try:
             await user.send(f"You have been warned by {str(ctx.author)} for: {reason or 'No Reason'}")
-        except discord.Forbidden:
+        except (discord.Forbidden, discord.HTTPException):
             pass
 
         e = discord.Embed(colour=0x36393E)
