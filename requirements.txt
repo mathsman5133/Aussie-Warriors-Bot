@@ -8,3 +8,5 @@ gitpython
 pygsheets==2.0.0
 importlib
 parsedatetime
+coc.py
+lru-dict

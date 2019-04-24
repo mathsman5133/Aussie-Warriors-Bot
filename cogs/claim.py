@@ -3,6 +3,8 @@ from discord.ext import commands
 from cogs.utils import checks, db, paginator
 
 import discord
+from coc import InvalidArgument
+
 import asyncpg.exceptions as pgexceptions
 
 
@@ -61,36 +63,34 @@ class Claim(commands.Cog):
                                        f'{member.display_name}#{member.discriminator} ({member.id})')
 
         if player_tag.startswith('#'):
-            cocplayer = await self.bot.coc.players(player_tag).get(self.bot.coc_token)
+            cocplayer = await self.bot.coc.get_player(player_tag)
             if 'notFound' in cocplayer.values():
                 raise commands.BadArgument(f'Player tag `{player_tag}` not found!')
 
         else:
             # search aw players for x ign, then search a4w
-            aw_members = await self.bot.coc.clans('#P0LYJC8C').members.get(self.bot.coc_token)
-            for awm in aw_members['items']:
-                if awm['name'] == player_tag:
-                    cocplayer = await self.bot.coc.players(awm['tag']).get(self.bot.coc_token)
-                    break
+            aw_members = await self.bot.coc.get_clan('#P0LYJC8C').members
+            found = [n for n in aw_members if n.tag == player_tag]
+            if found:
+                cocplayer = await self.bot.coc.get_player(player_tag)
+
             else:
-                a4w_members = await self.bot.coc.clans('#808URP9P').members.get(self.bot.coc_token)
-                for a4wm in a4w_members['items']:
-                    if a4wm['name'] == player_tag:
-                        cocplayer = await self.bot.coc.players(a4wm['tag']).get(self.bot.coc_token)
-                        break
+                a4w_members = await self.bot.coc.get_clan('#808URP9P').members
+                found = [n for n in a4w_members if n.tag == player_tag]
+                if found:
+                    cocplayer = await self.bot.coc.get_player(player_tag)
+
                 else:
                     raise commands.BadArgument(f"I have checked in AW and A4W "
                                                f"for an IGN matching `{player_tag}` - and couldn't find one!")
 
         user_id = mention.id
-        ign = cocplayer['name']
-        tag = cocplayer['tag']
+        ign = cocplayer.name
+        tag = cocplayer.tag
 
-        for achievement in cocplayer['achievements']:
-            if achievement['name'] == 'Friend in Need':
-                don = achievement['value']
-                break
-        else:
+        try:
+            don = cocplayer._achievements.get('Friend in Need').value
+        except AttributeError:
             return await ctx.send('Unknown error occured with COC API. Sorry')
 
         starting_donations = don
@@ -98,8 +98,8 @@ class Claim(commands.Cog):
         difference = await self.donations_by_today()
 
         try:
-            clan = cocplayer['clan']['name']
-        except KeyError:
+            clan = cocplayer.clan.name
+        except AttributeError:
             clan = ''
 
         exempt = False
@@ -256,7 +256,7 @@ class Claim(commands.Cog):
     async def aw_get_members(self, ctx):
         """Returns a pagination of all accounts, claimed and not, for AW
         """
-        clan_members = await self.bot.coc.clans('#P0LYJC8C').members.get(self.bot.coc_token)
+        clan_members = await self.bot.coc.get_clan('#P0LYJC8C', cache=True).members
 
         query = "SELECT ign, tag, userid FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussie Warriors')
@@ -267,9 +267,9 @@ class Claim(commands.Cog):
 
         unclaimed_tags = []
         unclaimed_ign = []
-        for member in clan_members['items']:
-            tag = member['tag']
-            name = member['name']
+        for member in clan_members:
+            tag = member.tag
+            name = member.name
             if tag not in claimed_tags:
                 unclaimed_tags.append(tag)
                 unclaimed_ign.append(name)
@@ -293,7 +293,7 @@ class Claim(commands.Cog):
     async def a4w_get_members(self, ctx):
         """Returns a pagination of all accounts, claimed and not, for A4W
         """
-        clan_members = await self.bot.coc.clans('#808URP9P').members.get(self.bot.coc_token)
+        clan_members = await self.bot.coc.get_clan('#808URP9P', cache=True).members
 
         query = "SELECT ign, tag, userid FROM claims WHERE clan = $1"
         dump = await ctx.db.fetch(query, 'Aussies 4 War')
@@ -305,9 +305,9 @@ class Claim(commands.Cog):
         unclaimed_tags = []
         unclaimed_ign = []
 
-        for member in clan_members['items']:
-            tag = member['tag']
-            name = member['name']
+        for member in clan_members:
+            tag = member.tag
+            name = member.name
             if tag not in claimed_tags:
                 unclaimed_tags.append(tag)
                 unclaimed_ign.append(name)
@@ -334,11 +334,10 @@ class Claim(commands.Cog):
         return dump[0]
 
     async def update_ign(self, tag):
-        coc = (await self.bot.coc.players(tag).get(self.bot.coc_token))
-        if not coc:
+        try:
+            ign = await self.bot.coc.get_player(tag).name
+        except (InvalidArgument, AttributeError):
             return False
-
-        ign = coc['name']
 
         query = 'UPDATE claims SET ign = $1 WHERE tag = $2'
         await self.bot.pool.execute(query, ign, tag)

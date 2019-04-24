@@ -8,14 +8,16 @@ import datetime
 
 import discord
 import aiohttp
+import coc
 
-import git
 import traceback
 
-from cogs.utils.cocapi import ClashOfClans
 from cogs.utils.db import Table
 from cogs.utils import context
+import git
+import logging
 
+logging.basicConfig(level=logging.DEBUG)
 
 webhook = discord.Webhook.partial(id=560742901034909696,
                                   token='wOuVuuK2rloW_KlxVB9MZ9hppyLstGjq-idwFHLGl8HwZubIVQDIstR2YreEjsJejIJ4',
@@ -42,8 +44,9 @@ with open(json_location) as creds:
 
 class AWBot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix=commands.when_mentioned_or('?'), case_insensitive=True)  # setup bot
+        super().__init__(command_prefix=commands.when_mentioned_or('+'), case_insensitive=True)  # setup bot
         self.remove_command('help')
+        self.loaded = creds
 
         for e in initial_extensions:
             try:
@@ -53,11 +56,9 @@ class AWBot(commands.Bot):
                 print(exc)
                 print(f'Failed to load extension {e}: {er}.', file=sys.stderr)
 
-        # our json loaded creds file with tokens
-        self.loaded = creds
+        self.coc = coc.Client(email=creds['cocemail'], password=creds['cocpassword'], key_count=5)
         self.webhook = webhook
 
-        self.coc_token = self.loaded['coctoken']
         self.session = aiohttp.ClientSession(loop=self.loop)
 
         if 'updateStats' in self.loaded.keys():
@@ -80,9 +81,6 @@ class AWBot(commands.Bot):
             self.loaded['warRoles'] = 'false'
             self.update_stats = self.loaded['warRoles']
             print('No warRoles value found. I have set it to default false')
-
-
-        self.coc = ClashOfClans(bot=self)
 
         # github repo object based on main directory we're in. used for `git pull` commands
         self.repo = git.Repo(REPO_PATH)
@@ -163,7 +161,7 @@ class AWBot(commands.Bot):
         exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=False))
         e.description = f'```py\n{exc}\n```'
         e.timestamp = datetime.datetime.utcnow()
-        await webhook.send(embed=e)
+        webhook.send(embed=e)
 
     async def on_error(self, event, *args, **kwargs):
         e = discord.Embed(title='Event Error', colour=0xa32952)
@@ -172,7 +170,7 @@ class AWBot(commands.Bot):
         e.timestamp = datetime.datetime.utcnow()
 
         try:
-            await webhook.send(embed=e)
+            webhook.send(embed=e)
         except:
             pass
 

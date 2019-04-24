@@ -97,7 +97,7 @@ class ShowDonations(commands.Cog):
         """
         if mention:
             query = "SELECT userid, average FROM averages WHERE userid = $1"
-            dump = await ctx.db.fetchrow(query, mention.id)
+            dump = await ctx.db.fetch(query, mention.id)
         else:
             query = "SELECT userid, average FROM averages WHERE warning = $1"
             dump = await ctx.db.fetch(query, True)

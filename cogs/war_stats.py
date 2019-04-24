@@ -8,6 +8,7 @@ import re
 import pygsheets
 import dateutil
 import datetime
+import coc
 
 
 class WarStatsTable(db.Table, table_name='war_stats'):
@@ -122,32 +123,30 @@ class WarStats(commands.Cog):
         if not tag_or_name:
             tag_or_name = self.bot.AW_CLAN_TAG  # lets set it to AW tag for the lazy
 
-        clan = await self.bot.coc.clans(tag_or_name).get(self.bot.coc_token)
-
-        if not clan or 'notFound' in clan.values():
+        try:
+            clan = await self.bot.coc.get_clan(tag_or_name)
+        except coc.NotFound:
             raise commands.BadArgument(':x: Clan Not Found!')  # api returned {reason: 'notFound'} or some other error
 
         e = discord.Embed(colour=discord.Colour.blue())
-        e.add_field(name=clan['name'],
-                    value=clan['tag'])
+        e.add_field(name=clan.name,
+                    value=clan.tag)
 
-        if clan['isWarLogPublic']:  # we will get errors if warlog is closed
-            war = await self.bot.coc.clans(tag_or_name).currentwar.get(self.bot.coc_token)
+        if clan.public_war_log:  # we will get errors if warlog is closed
+            war = await self.bot.coc.get_current_war(tag_or_name)
 
             e.add_field(name='War State:',
-                        value=war['state'],
+                        value=war.state,
                         inline=False)
 
-            if 'endTime' in war.keys():  # if state is notInWar we will get errors
-                end_time = dateutil.parser.parse(war['endTime'])
+            if war.end_time:  # if state is notInWar we will get errors
 
-                delta = end_time - datetime.datetime.now(datetime.timezone.utc)
-                hours, remainder = divmod(int(delta.total_seconds()), 3600)
+                hours, remainder = divmod(int(war.end_time.seconds_until), 3600)
                 minutes, seconds = divmod(remainder, 60)
 
                 e.add_field(name='Opponent:',
-                            value=f"{war['opponent']['name']}\n"
-                                  f"{war['opponent']['tag']}",
+                            value=f"{war.opponent.name}\n"
+                                  f"{war.opponent.tag}",
                             inline=False)
                 e.add_field(name="War End Time:",
                             value=f'{hours} hours {minutes} minutes {seconds} seconds',
@@ -580,59 +579,38 @@ class WarStats(commands.Cog):
         return stats
 
     async def get_coc_status(self, warning_msg, warnings_sent):
-        ts = None
+        try:
+            current_war = await self.bot.coc.get_current_war(self.CLAN_TAG)
 
-        current_war = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
+        except coc.HTTPException as e:
+            embed = discord.Embed(colour=discord.Colour.red())
+            message_string = re.sub('\d', '\\*', e.message)  # message may contain ip. obscure that
+            embed.add_field(name="Clash of Clans API Error",
+                            value=f"Reason: {e.reason}\nMessage: {message_string}")
 
-        if 'state' in current_war.keys():
-            if current_war['state'] in ['preparation', 'inWar']:
-                ts = self.get_seconds(current_war['endTime'])
+            embed.set_footer(text=f'{warnings_sent} warnings sent (Error persisted for ~{warnings_sent*2} minutes)')
 
             if warning_msg:
-                warning_msg = None
-                warnings_sent = 0
+                await warning_msg.edit(embed=e)
+                warnings_sent += 1
 
-            if current_war['state'] in ['preparation', 'inWar', 'warEnded']:
-                opponent_tag = current_war['opponent']['tag']
             else:
-                opponent_tag = None
+                msg = await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
+                warning_msg = msg
+                warnings_sent += 1
 
-            return current_war['state'], warning_msg, warnings_sent, ts, opponent_tag
-
-        e = discord.Embed(colour=discord.Colour.red())
-
-        if 'reason' in current_war.keys():
-            message_string = re.sub('\d', '\\*', current_war['message'])  # message may contain ip. obscure that
-            e.add_field(name="Clash of Clans API Error",
-                        value=f"Reason: {current_war['reason']}\nMessage: {message_string}")
-
-        elif not current_war:
-            e.add_field(name="Clash of Clans API Error",
-                        value="The request returned `None`\nIs it an incorrect token?")
-
-        else:
-            e.add_field(name="Clash of Clans API Error",
-                        value="Unknown Error")
-
-        e.set_footer(text=f'{warnings_sent} warnings sent (Error persisted for ~{warnings_sent*2} minutes)')
+            return None, warning_msg, warnings_sent, None, None
 
         if warning_msg:
-            await warning_msg.edit(embed=e)
-            warnings_sent += 1
+            warning_msg = None
+            warnings_sent = 0
 
-        else:
-            msg = await (self.bot.get_channel(self.bot.info_channel_id)).send(embed=e)
-            warning_msg = msg
-            warnings_sent += 1
+        try:
+            opponent_tag = current_war.opponent.tag
+        except AttributeError:
+            opponent_tag = None
 
-        return None, warning_msg, warnings_sent, ts, None
-
-    @staticmethod
-    def get_seconds(timestamp):
-        end_time = dateutil.parser.parse(timestamp)
-
-        delta = end_time - datetime.datetime.now(datetime.timezone.utc)
-        return delta.total_seconds()
+        return current_war.state, warning_msg, warnings_sent, current_war.end_time, opponent_tag
 
     async def war_stats_auto_updater(self):
         warnings_sent = 0

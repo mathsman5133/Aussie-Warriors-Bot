@@ -281,10 +281,9 @@ class WarAdmin(commands.Cog):
         # Create a cursor & define AW tag
 
         # Query to get details for current war
-        currentWar = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
-
+        currentWar = await self.bot.coc.get_current_war(self.CLAN_TAG)
         # Get the list of tags
-        currentTags = [x['tag'] for x in currentWar['clan']['members']]
+        currentTags = [x.tag for x in currentWar.members]
 
         # Get a list of tags from last war
         sql = 'select tag from last_war'
@@ -330,7 +329,7 @@ class WarAdmin(commands.Cog):
         unclaimedTags = list(current - tagsInDb)
 
         # Get ign of people with unclaimed tags
-        unclaimed = [(x['name'], tag) for x in currentWar['clan']['members'] for tag in unclaimedTags if x['tag'] == tag]
+        unclaimed = [(str(x), tag) for x in currentWar.members for tag in unclaimedTags if x.tag == tag]
 
         # If there are any unclaimed accounts (We don't want to truncate the last war data)
         if unclaimed:

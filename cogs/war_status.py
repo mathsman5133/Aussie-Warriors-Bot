@@ -5,18 +5,26 @@ import dateutil
 import asyncio
 import coc
 from cogs.utils.help import FieldPages
+from coc import CacheType
 
 
 class WarStatus(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.coc = coc.Client(email='mathsman5132@gmail.com', password='creepy_crawley',
+                              key_count=2, loop=self.bot.loop)
+        self.coc.set_cache(str(CacheType.war_logs), max_size=1, ttl=1)
+        bot.coc = self.coc
 
     BALLOON_ICON_URL = "https://vignette.wikia.nocookie.net/clashofclans/images/" \
                        "2/2f/Balloon_info.png/revision/latest/scale-to-width-down/120?cb=20170927230730"
 
+    def cog_unload(self):
+        asyncio.ensure_future(self.coc.close())
+
     @commands.command()
     async def get_player(self, ctx, tag):
-        t = await self.bot.coc.get_player(tag)
+        t = await self.coc.get_player(tag)
         await ctx.send(t)
 
     @commands.group()
@@ -65,7 +73,7 @@ class WarStatus(commands.Cog):
                     value=clan.tag)
 
         if clan.public_war_log:  # we will get errors if warlog is closed
-            war = await self.bot.coc.get_current_war(clan.tag)
+            war = await self.coc.get_current_war(clan.tag)
 
             e.add_field(name='War State:',
                         value=war.state,
@@ -98,14 +106,14 @@ class WarStatus(commands.Cog):
 
         if tag_or_name.startswith('#'):
             try:
-                try_tag = await self.bot.coc.get_clan(tag_or_name)
+                try_tag = await self.coc.get_clan(tag_or_name)
             except coc.NotFound:
                 raise commands.BadArgument(f'Clan tag {tag_or_name} not found. Please try again')
 
             return try_tag
 
         else:
-            try_names = await self.bot.coc.search_clans(name=tag_or_name, limit=5)
+            try_names = await self.coc.search_clans(name=tag_or_name, limit=5)
 
         info.extend((emojis[index], try_names[index]) for index in range(0, len(try_names)))
 
@@ -139,7 +147,7 @@ class WarStatus(commands.Cog):
             return await ctx.send('You took too long. Goodbye.')
 
         await msg.delete()
-        return await self.bot.coc.get_clan(self.clan.tag, cache=True)
+        return await self.coc.get_clan(self.clan.tag, cache=True)
 
     async def current_war(self, clan):
         e = discord.Embed(colour=discord.Colour.blue())
@@ -148,7 +156,7 @@ class WarStatus(commands.Cog):
             e.description = 'Current war not available: war log may be private'
             return e
 
-        war = await self.bot.coc.get_current_war(clan.tag)
+        war = await self.coc.get_current_war(clan.tag)
 
         if war.state not in ['inWar', 'warEnded']:
             e.description = f"Currently in {war.state} state. Stats are not available. Please check back later."
@@ -198,7 +206,7 @@ class WarStatus(commands.Cog):
         return fmt
 
     async def member_info(self, member):
-        try_cache = await self.bot.coc.get_player(member.tag, cache=True, fetch=False)
+        try_cache = await self.coc.get_player(member.tag, cache=True, fetch=False)
         if try_cache:
             member = try_cache
 
@@ -240,7 +248,7 @@ class WarStatus(commands.Cog):
     @commands.command()
     async def clan_members(self, ctx, *, clan_tag_or_name: str):
         if clan_tag_or_name.startswith('#'):
-            clan = await self.bot.coc.get_clan(clan_tag_or_name, cache=True)
+            clan = await self.coc.get_clan(clan_tag_or_name, cache=True)
         else:
             clan = await self.search_clans(ctx, clan_tag_or_name)
 
@@ -249,7 +257,7 @@ class WarStatus(commands.Cog):
         to_paginate.append(('Clan Info', self.clan_info(clan)))
 
         for member in clan.members:
-            # member = await self.bot.coc.get_player(member.tag, cache=True)
+            # member = await self.coc.get_player(member.tag, cache=True)
             to_paginate.append(('Member Info', await self.member_info(member)))
 
         paginator = FieldPages(ctx=ctx, entries=to_paginate, per_page=1)
@@ -290,7 +298,7 @@ class WarStatus(commands.Cog):
     @commands.command()
     async def clan_warlog(self, ctx, *, clan_tag_or_name: str):
         if clan_tag_or_name.startswith('#'):
-            clan = await self.bot.coc.get_clan(clan_tag_or_name, cache=True)
+            clan = await self.coc.get_clan(clan_tag_or_name, cache=True)
         else:
             clan = await self.search_clans(ctx, clan_tag_or_name)
 
@@ -298,7 +306,7 @@ class WarStatus(commands.Cog):
 
         to_paginate.append(('Clan Info', self.clan_info(clan)))
 
-        war_log = await self.bot.coc.get_warlog(clan.tag, cache=True)
+        war_log = await self.coc.get_warlog(clan.tag, cache=True)
 
         for war in war_log:
             if isinstance(war, coc.WarLog):
@@ -361,7 +369,7 @@ class WarStatus(commands.Cog):
 
     @commands.command()
     async def get_player(self, ctx, player_tag):
-        player = await self.bot.coc.get_player(player_tag, cache=True)
+        player = await self.coc.get_player(player_tag, cache=True)
 
         to_paginate = []
 

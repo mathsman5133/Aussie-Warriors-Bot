@@ -139,12 +139,12 @@ class Update(commands.Cog):
         await self.bot.pool.execute(query, True, 13.3, dayofyear)
 
     async def new_avg(self, user_id):
-        query = "SELECT difference FROM claims WHERE userid = $1"
+        query = "SELECT SUM(differences), COUNT(*) FROM claims WHERE userid = $1"
         dump = await self.bot.pool.fetchrow(query, user_id)
 
-        average_donations = sum(dump) / len(dump)
+        average_donations = dump['sum'] / dump['count']
 
-        if average_donations >= await self.donations_by_today():
+        if average_donations >= 0:
             warn = False
         else:
             warn = True
@@ -153,13 +153,11 @@ class Update(commands.Cog):
         await self.bot.pool.execute(query, user_id, average_donations, warn)
 
     async def download_starting_donations(self, tag):
-        player = await self.bot.coc.players(tag).get(self.bot.coc_token)
+        player = await self.bot.coc.get_player(tag)
 
-        for achievement in player['achievements']:
-            if achievement['name'] == 'Friend in Need':
-                donations = achievement['value']
-                break
-        else:
+        try:
+            donations = player._achievements.get('Friend in Need').value
+        except AttributeError:
             return
 
         query = "UPDATE claims SET starting_donations=$1 WHERE tag=$2"
@@ -175,8 +173,8 @@ class Update(commands.Cog):
                 """
         await self.bot.pool.execute(query)
 
-        query = "SELECT userid FROM claims WHERE clan = 'Aussie Warriors' or clan = 'Aussies 4 War'"
-        dump = list(set(await self.bot.pool.fetch(query)))
+        query = "SELECT DISTINCT userid FROM claims WHERE clan = 'Aussie Warriors' or clan = 'Aussies 4 War'"
+        dump = list(await self.bot.pool.fetch(query))
 
         for row in dump:
             await self.new_avg(row['userid'])
@@ -196,21 +194,19 @@ class Update(commands.Cog):
         dump = await self.bot.pool.fetch(query, user_id)
 
         for individual in dump:
-            player = await self.bot.coc.players(individual['tag']).get(self.bot.coc_token)
+            player = await self.bot.coc.get_player(individual['tag'])
 
-            for achievement in player['achievements']:
-                if achievement['name'] == 'Friend in Need':
-                    current_donations = achievement['value']
-                    break
-            else:
+            try:
+                current_donations = player._achievements.get('Friend in Need').value
+            except AttributeError:
                 break
 
             donations_this_season = current_donations - individual['starting_donations']
             donations_required_difference = donations_this_season - (await self.donations_by_today())
 
             try:
-                clan = player['clan']['name']
-            except KeyError:
+                clan = player.clan.name
+            except AttributeError:
                 clan = ''
 
             await self.update_database(donations_this_season, donations_required_difference, clan, individual['tag'])
@@ -220,19 +216,20 @@ class Update(commands.Cog):
         dump = await self.bot.pool.fetch(query)
 
         for individual in dump:
-            player = await self.bot.coc.players(individual['tag']).get(self.bot.coc_token)
+            player = await self.bot.coc.get_player(individual['tag'])
 
-            for achievement in player['achievements']:
-                if achievement['name'] == 'Friend in Need':
-                    current_donations = achievement['value']
-                    break
-            else:
+            try:
+                current_donations = player._achievements.get('Friend in Need').value
+            except AttributeError:
                 break
 
             donations_this_season = current_donations - individual['starting_donations']
             donations_required_difference = donations_this_season - (await self.donations_by_today())
 
-            clan = player['clan']['name'] if 'clan' in player.keys() else ''
+            try:
+                clan = player.clan.name
+            except AttributeError:
+                clan = ''
 
             await self.update_database(donations_this_season, donations_required_difference, clan, individual['tag'])
 

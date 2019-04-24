@@ -8,6 +8,7 @@ from cogs.utils import checks, db
 from cogs.utils.help import HelpPaginator
 
 import io
+import time
 import textwrap
 import traceback
 import datetime
@@ -17,6 +18,19 @@ import copy
 import os
 import sys
 import asyncio
+import inspect
+import timeit
+
+
+def bool_converter(string: str):
+    lowered = string.lower()
+    if lowered in ('yes', 'y', 'true', 't', '1', 'enable', 'on'):
+        return True
+    elif lowered in ('no', 'n', 'false', 'f', '0', 'disable', 'off'):
+        return False
+
+
+INVALID_METHODS = ['close', 'event', 'set_cache']
 
 
 class Commands(db.Table):
@@ -434,7 +448,8 @@ class Admin(commands.Cog):
             'guild': ctx.guild,
             'message': ctx.message,
             '_': self._last_result,
-            'self': self
+            'self': self,
+            'coc': self.bot.coc
         }
 
         env.update(globals())
@@ -459,7 +474,12 @@ class Admin(commands.Cog):
             exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=False))
             e.description = f'```py\n{exc}\n```'  # format legible traceback
             e.timestamp = datetime.datetime.utcnow()
-            await ctx.send(embed=e)
+
+            if len(exc) > 2000:
+                fp = io.BytesIO(exc.encode('utf-8'))
+                await ctx.send('Too many results...', file=discord.File(fp, 'results.txt'))
+            else:
+                await ctx.send(embed=e)
         else:
             value = stdout.getvalue()
             try:
@@ -469,10 +489,326 @@ class Admin(commands.Cog):
 
             if ret is None:
                 if value:
-                    await ctx.send(f'```py\n{value}\n```')
+                    if len(value) > 2000:
+                        fp = io.BytesIO(value.encode('utf-8'))
+                        await ctx.send('Too many results...', file=discord.File(fp, 'results.txt'))
+                    else:
+                        await ctx.send(f'```py\n{value}\n```')
             else:
                 self._last_result = ret
-                await ctx.send(f'```py\n{value}{ret}\n```')
+                if len(value) > 2000:
+                    fp = io.BytesIO(value.encode('utf-8'))
+                    await ctx.send('Too many results...', file=discord.File(fp, 'results.txt'))
+                else:
+                    await ctx.send(f'```py\n{value}{ret}\n```')
+
+    @commands.command()
+    async def teval(self, ctx, *, body: str):
+        env = {
+            'bot': self.bot,
+            'ctx': ctx,
+            'channel': ctx.channel,
+            'author': ctx.author,
+            'guild': ctx.guild,
+            'message': ctx.message,
+            '_': self._last_result,
+            'self': self,
+            'coc': self.bot.coc
+        }
+
+        env.update(globals())
+
+        body = self.cleanup_code(body)
+        stdout = io.StringIO()
+
+        to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
+        import ast
+        try:
+            r = ast.literal_eval(body)
+        except Exception as e:
+            return await ctx.send(f'```py\n{e.__class__.__name__}: {e}\n```')
+
+        await ctx.send(f'```py\n{r}\n```')
+
+        func = env['func']
+        try:
+            with redirect_stdout(stdout):
+                ret = await func()
+        except Exception as e:
+            error = getattr(e, 'original', e)
+            e = discord.Embed(colour=discord.Colour.red())
+            exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=False))
+            e.description = f'```py\n{exc}\n```'  # format legible traceback
+            e.timestamp = datetime.datetime.utcnow()
+
+            if len(exc) > 2000:
+                fp = io.BytesIO(exc.encode('utf-8'))
+                await ctx.send('Too many results...', file=discord.File(fp, 'results.txt'))
+            else:
+                await ctx.send(embed=e)
+        else:
+            value = stdout.getvalue()
+            try:
+                await ctx.message.add_reaction('\u2705')
+            except:
+                pass
+
+            if ret is None:
+                if value:
+                    if len(value) > 2000:
+                        fp = io.BytesIO(value.encode('utf-8'))
+                        await ctx.send('Too many results...', file=discord.File(fp, 'results.txt'))
+                    else:
+                        await ctx.send(f'```py\n{value}\n```')
+            else:
+                self._last_result = ret
+                if len(value) > 2000:
+                    fp = io.BytesIO(value.encode('utf-8'))
+                    await ctx.send('Too many results...', file=discord.File(fp, 'results.txt'))
+                else:
+                    await ctx.send(f'```py\n{value}{ret}\n```')
+
+    # @commands.command()
+    # async def timeit(self, ctx, *, body: str):
+    #     attributes = body.split('.')
+    #     call = self.bot.coc
+    #     result = ''
+    #     for attr in attributes:
+    #         if attr in ['coc', 'coc_client']:
+    #             continue
+    #         if '(' in attr:
+    #             new_attr = attr.split('(')[0]
+    #             func = getattr(call, new_attr)
+    #             params = attr.split('(')[1][:-1].split(',')
+    #             args = []
+    #             kwargs = {}
+    #             for p in params:
+    #                 sp = p.split('=')
+    #                 if len(sp) == 1:
+    #                     args.append(p)
+    #                     continue
+    #                 kwargs[sp[0]] = sp[1]
+    #             if asyncio.iscoroutinefunction(func):
+    #                 res = await func(*args, **kwargs)
+    #             else:
+    #                 res = func(*args, **kwargs)
+    #
+    #             result = res
+    #
+
+    @commands.command()
+    async def timeit(self, ctx):
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        await ctx.send('Welcome! Please type the name of the function you would like to time today'
+                       ' eg. if you wanted to use `coc.get_clan(...)` you would type `get_clan`.')
+
+        msg = await self.bot.wait_for('message', check=check)
+
+        try:
+            method = getattr(self.bot.coc, msg.content)
+        except AttributeError:
+            return await ctx.send('Could not find the method provided! Please see the docs: '
+                                  'https://cocpy.readthedocs.io/en/latest/')
+
+        if method.__name__ in INVALID_METHODS:
+            return await ctx.send('Valid method not provided (this is a private method not for public use.)')
+
+        try:
+            ispct = inspect.signature(method)
+        except TypeError:
+            return await ctx.send('Valid method not provided (you passed an attribute - not a method). '
+                                  'Please see the docs for more info: https://cocpy.readthedocs.io/en/latest/')
+
+        args = [n for n in ispct.parameters]
+        args_to_pass = {}
+        if args:
+            for arg in args:
+                await ctx.send(f'What would you like to pass for the {arg} parameter?')
+                msg = await self.bot.wait_for('message', check=check)
+                if bool_converter(msg.content) is True:
+                    args_to_pass[arg] = True
+                elif bool_converter(msg.content) is False:
+                    args_to_pass[arg] = False
+                else:
+                    args_to_pass[arg] = msg.content
+        try:
+            to_use_cache = args_to_pass.pop('cache', False)
+            to_fetch = args_to_pass.pop('fetch', True)
+
+            if inspect.iscoroutinefunction(method):
+                s = time.perf_counter()
+                result = await method(cache=to_use_cache, fetch=to_fetch,
+                                      **args_to_pass)
+                f = time.perf_counter()
+            else:
+                s = time.perf_counter()
+                result = await method(cache=to_use_cache, fetch=to_fetch,
+                                      **args_to_pass)
+                f = time.perf_counter()
+        except Exception as e:
+            exc = ''.join(traceback.format_exception(type(e), e, e.__traceback__, chain=False))
+            return await ctx.send(f'Oops, something broke!\n```py\n{exc}\n```')
+
+        time_taken = (f - s)*1000
+        if len(str(result)) < 2000:
+            await ctx.send(f'Awesome! Time Taken: {time_taken}ms\n```py\nResults:\n{result}\n```')
+        else:
+            fp = io.BytesIO(str(result).encode('utf-8'))
+            await ctx.send(f'Too many results... but you took {time_taken}ms!', file=discord.File(fp, 'results.txt'))
+
+        async def attribute_access(cls):
+            await ctx.send('Please type the name of any attribute you would like to get of the results you found. '
+                           'I will time attribute access, too.')
+
+            msg = await self.bot.wait_for('message', check=check)
+
+            s = time.perf_counter()
+            try:
+                attribute = getattr(cls, msg.content)
+            except AttributeError:
+                return await ctx.send('Could not find the attribute provided! Please see the docs: '
+                                      f'https://cocpy.readthedocs.io/en/latest/api.html#coc.{cls.__class__.__name__}')
+
+            f = time.perf_counter()
+
+            time_taken = (f - s)*1000
+            if len(str(attribute)) < 2000:
+                await ctx.send(f'Awesome! Time Taken: {time_taken}ms\n```py\nResults:\n{str(attribute)}\n```')
+            else:
+                fp = io.BytesIO(str(attribute).encode('utf-8'))
+                await ctx.send(f'Too many results... but you took {time_taken}ms!', file=discord.File(fp, 'results.txt'))
+
+            return attribute
+
+        attribute = result
+        while True:
+            try:
+                attribute.__module__
+            except AttributeError:
+                break
+            result = await attribute_access(attribute)
+            if isinstance(result, discord.Message):
+                return
+            attribute = result
+
+        return await ctx.send('All done! Thanks...')
+
+    def time(self, *, function_string, to_repeat):
+        async def fctn():
+            function_string
+        # fctn = f"async dec func(): return {function_string}"
+        return timeit.timeit(fctn(), to_repeat)
+
+    @commands.command()
+    async def loop_timer(self, ctx, to_repeat: int=10):
+        if to_repeat > 10:
+            return await ctx.send('Can\'t loop through this function more than 10 times. Sorry.')
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        await ctx.send('Welcome! Please type the name of the function you would like to time today'
+                       ' eg. if you wanted to use `coc.get_clan(...)` you would type `get_clan`.')
+
+        msg = await self.bot.wait_for('message', check=check)
+
+        try:
+            method = getattr(self.bot.coc, msg.content)
+        except AttributeError:
+            return await ctx.send('Could not find the method provided! Please see the docs: '
+                                  'https://cocpy.readthedocs.io/en/latest/')
+
+        if method.__name__ in INVALID_METHODS:
+            return await ctx.send('Valid method not provided (this is a private method not for public use.)')
+
+        try:
+            ispct = inspect.signature(method)
+        except TypeError:
+            return await ctx.send('Valid method not provided (you passed an attribute - not a method). '
+                                  'Please see the docs for more info: https://cocpy.readthedocs.io/en/latest/')
+
+        args = [n for n in ispct.parameters]
+        args_to_pass = {}
+        if args:
+            for arg in args:
+                await ctx.send(f'What would you like to pass for the {arg} parameter?')
+                msg = await self.bot.wait_for('message', check=check)
+                if bool_converter(msg.content) is True:
+                    args_to_pass[arg] = True
+                elif bool_converter(msg.content) is False:
+                    args_to_pass[arg] = False
+                else:
+                    args_to_pass[arg] = msg.content
+        try:
+            to_use_cache = args_to_pass.pop('cache', False)
+            to_fetch = args_to_pass.pop('fetch', True)
+
+            async def func():
+                return await method(cache=to_use_cache, fetch=to_fetch,
+                                    **args_to_pass)
+
+            env = {'func': await func()}
+            env.update(globals())
+
+            time_taken = timeit.timeit('func', globals=env, number=to_repeat)
+            result = await func()
+
+        except Exception as e:
+            exc = ''.join(traceback.format_exception(type(e), e, e.__traceback__, chain=False))
+            return await ctx.send(f'Oops, something broke!\n```py\n{exc}\n```')
+
+        await ctx.send(f'```\nTime Taken: {time_taken}ms\nLoops: {to_repeat}\n'
+                       f'Time Per Loop (avg): {time_taken / to_repeat}```')
+
+        async def attribute_access(cls):
+            await ctx.send('Please type the name of any attribute you would like to get of the results you found. '
+                           'I will time attribute access, too.')
+
+            attribute = (await self.bot.wait_for('message', check=check)).content
+
+            try:
+                getattr(cls, attribute)
+            except AttributeError:
+                return await ctx.send('Could not find the attribute provided! Please see the docs: '
+                                      f'https://cocpy.readthedocs.io/en/latest/api.html#coc.{cls.__class__.__name__}')
+
+            await ctx.send('Please type the number of loops you wish to repeat (must be <1000)')
+            msg = await self.bot.wait_for('message', check=check)
+            to_repeat = int(msg.content)
+            if to_repeat > 1000:
+                return await ctx.send('Goodbye. Loops must be below 1000, *like I told you*.')
+
+            env = {'cls': cls,
+                   'attribute': attribute}
+            env.update(globals())
+
+            time_taken = timeit.timeit('getattr(cls, attribute)', globals=env, number=to_repeat)
+            attribute = getattr(cls, attribute)
+
+            await ctx.send(f'```\nTime Taken: {time_taken}ms\nLoops: {to_repeat}\n'
+                           f'Time Per Loop (avg): {time_taken / to_repeat}```')
+
+            return attribute
+
+        attribute = result
+        while True:
+            try:
+                attribute.__module__
+            except AttributeError:
+                break
+            result = await attribute_access(attribute)
+            if isinstance(result, discord.Message):
+                return
+            attribute = result
+
+        return await ctx.send('All done! Thanks...')
+
+
+
+
+
+
 
     @commands.command(name='help')
     async def _help(self, ctx, *, command: str = None):
@@ -560,7 +896,6 @@ class Admin(commands.Cog):
         # odd and unnecessary for most people, I will make it easy to remove
         # for those people.
 
-        import time
 
         query = self.cleanup_code(query)
 
