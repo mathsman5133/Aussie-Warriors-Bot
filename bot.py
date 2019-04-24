@@ -44,9 +44,10 @@ with open(json_location) as creds:
 
 class AWBot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix=commands.when_mentioned_or('+'), case_insensitive=True)  # setup bot
+        super().__init__(command_prefix=commands.when_mentioned_or('?'), case_insensitive=True)  # setup bot
         self.remove_command('help')
         self.loaded = creds
+        self.coc = coc.Client(email=creds['cocemail'], password=creds['cocpassword'], key_count=5)
 
         for e in initial_extensions:
             try:
@@ -56,7 +57,6 @@ class AWBot(commands.Bot):
                 print(exc)
                 print(f'Failed to load extension {e}: {er}.', file=sys.stderr)
 
-        self.coc = coc.Client(email=creds['cocemail'], password=creds['cocpassword'], key_count=5)
         self.webhook = webhook
 
         self.session = aiohttp.ClientSession(loop=self.loop)
