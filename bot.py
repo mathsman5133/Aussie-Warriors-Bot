@@ -17,7 +17,7 @@ from cogs.utils import context
 import git
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 webhook = discord.Webhook.partial(id=560742901034909696,
                                   token='wOuVuuK2rloW_KlxVB9MZ9hppyLstGjq-idwFHLGl8HwZubIVQDIstR2YreEjsJejIJ4',
@@ -47,7 +47,7 @@ class AWBot(commands.Bot):
         super().__init__(command_prefix=commands.when_mentioned_or('?'), case_insensitive=True)  # setup bot
         self.remove_command('help')
         self.loaded = creds
-        self.coc = coc.Client(email=creds['cocemail'], password=creds['cocpassword'], key_count=5)
+        self.coc = coc.Client(email=creds['cocemail'], password=creds['cocpassword'], key_names='test')
 
         for e in initial_extensions:
             try:

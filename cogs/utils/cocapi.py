@@ -80,7 +80,6 @@ class ApiCall(object):
                 recursive calls by the `__getattr__` and `__call__` methods.
         """
         self.bot = bot
-        self.bearer_token = ''
         self.endpoint = endpoint
         self.api_version = api_version
         self.extract_items = extract_items
@@ -91,6 +90,12 @@ class ApiCall(object):
             self.uri_parts = ()
         else:
             self.uri_parts = uri_parts
+
+        self.players = {}
+        self.clans = {}
+        self.wars = {}
+        self.war_logs = {}
+        self.league_wars = {}
 
     def __getattr__(self, k):
         """ Append the name of the attribute to the uri_parts tuple.
@@ -127,7 +132,7 @@ class ApiCall(object):
     def build_headers(self):
         """Build the required headers to make the API call
         """
-        return {"Accept": "application/json", "authorization": "Bearer {}".format(self.bearer_token)}
+        return {"Accept": "application/json", "authorization": "Bearer {}".format(self.bot.coc_token)}
 
     async def _process_call(self, method):
 
@@ -136,56 +141,39 @@ class ApiCall(object):
         async with self.session.request(method, url, headers=self.build_headers()) as r:
             data = await r.json()
 
+        if 'reason' in data.keys():
+            data = await self.handle_error(data, method)
+
         return data
 
-    async def get(self, token):
+    async def get(self):
         """Execute a GET API call given by the `uri_parts` stored.
         """
-        self.bearer_token = token
         data = await self._process_call('get')
-        if 'reason' in data.keys():
-            if data['reason'] in ['accessDenied.invalidIp', 'accessDenied']:
-                try:
-                    token = await self.new_token()
-                except Exception as err:
-                    e = discord.Embed(colour=discord.Colour.red())
-                    e.add_field(name="Clash of Clans API Error",
-                                value=f"Error: {err}\nProbably need to delete some keys from website")
-                    await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
-                    return
-
-                self.bot.loaded['coctoken'] = token
-                await self.bot.save_json()
-                self.bearer_token = token
-
-                data = await self._process_call('get')
-
         return data
 
-    async def post(self, token):
+    async def post(self):
         """Execute a POST API call given by the `uri_parts` stored.
         """
-        self.bearer_token = token
         data = await self._process_call('post')
-
-        if 'reason' in data.keys():
-            if data['reason'] in ['accessDenied.invalidIp', 'accessDenied']:
-                try:
-                    token = await self.new_token()
-                except Exception as err:
-                    e = discord.Embed(colour=discord.Colour.red())
-                    e.add_field(name="Clash of Clans API Error",
-                                value=f"Error: {err}\nProbably need to delete some keys from website")
-                    await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
-                    return
-
-                self.bot.loaded['coctoken'] = token
-                await self.bot.save_json()
-
-                self.bearer_token = token
-                data = await self._process_call('post')
-
         return data
+
+    async def handle_error(self, data, method):
+        if data['reason'] in ['accessDenied.invalidIp', 'accessDenied']:
+            try:
+                token = await self.new_token()
+            except Exception as err:
+                e = discord.Embed(colour=discord.Colour.red())
+                e.add_field(name="Clash of Clans API Error",
+                            value=f"Error: {err}\nProbably need to delete some keys from website")
+                await self.bot.get_channel(self.bot.info_channel_id).send(embed=e)
+                return
+
+            self.bot.loaded['coctoken'] = token
+            await self.bot.save_json()
+
+            data = await self._process_call(method)
+            return data
 
     async def new_token(self):
 
@@ -323,9 +311,12 @@ class ClashOfClans(ApiCall):
             :param boolean extract_items: if True, the response will be parsed and wraped in a list or
                     dictionary. Otherwise, the requests response will be returned.
         """
+
         super(ClashOfClans, self).__init__(
             bot=bot,
             endpoint=endpoint,
             api_version=api_version,
             extract_items=extract_items
         )
+
+
