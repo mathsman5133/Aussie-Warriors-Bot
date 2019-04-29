@@ -158,6 +158,7 @@ class Update(commands.Cog):
         try:
             donations = player.achievements_dict.get('Friend in Need').value
         except AttributeError:
+            print('not ok')
             return
 
         query = "UPDATE claims SET starting_donations=$1 WHERE tag=$2"
@@ -199,6 +200,7 @@ class Update(commands.Cog):
             try:
                 current_donations = player.achievements_dict.get('Friend in Need').value
             except AttributeError:
+                print('not ok')
                 break
 
             donations_this_season = current_donations - individual['starting_donations']
@@ -221,6 +223,7 @@ class Update(commands.Cog):
             try:
                 current_donations = player.achievements_dict.get('Friend in Need').value
             except AttributeError:
+                print('not ok')
                 break
 
             donations_this_season = current_donations - individual['starting_donations']
