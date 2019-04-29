@@ -109,7 +109,7 @@ class Update(commands.Cog):
         await self.new_month()
 
         for tag in dump:
-            print(dump, tag['tag'])
+            print(tag['tag'])
             await self.download_starting_donations(tag['tag'])
 
         await self.refresh_avg()
@@ -156,7 +156,7 @@ class Update(commands.Cog):
         player = await self.bot.coc.get_player(tag)
 
         try:
-            donations = player._achievements.get('Friend in Need').value
+            donations = player.achievements_dict.get('Friend in Need').value
         except AttributeError:
             return
 
@@ -197,7 +197,7 @@ class Update(commands.Cog):
             player = await self.bot.coc.get_player(individual['tag'])
 
             try:
-                current_donations = player._achievements.get('Friend in Need').value
+                current_donations = player.achievements_dict.get('Friend in Need').value
             except AttributeError:
                 break
 
@@ -219,7 +219,7 @@ class Update(commands.Cog):
             player = await self.bot.coc.get_player(individual['tag'])
 
             try:
-                current_donations = player._achievements.get('Friend in Need').value
+                current_donations = player.achievements_dict.get('Friend in Need').value
             except AttributeError:
                 break
 
