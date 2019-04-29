@@ -3,7 +3,7 @@ from discord.ext import commands
 from cogs.utils import checks, db, paginator
 
 import discord
-from coc import InvalidArgument
+from coc import InvalidArgument, NotFound
 
 import asyncpg.exceptions as pgexceptions
 
@@ -63,8 +63,9 @@ class Claim(commands.Cog):
                                        f'{member.display_name}#{member.discriminator} ({member.id})')
 
         if player_tag.startswith('#'):
-            cocplayer = await self.bot.coc.get_player(player_tag)
-            if 'notFound' in cocplayer.values():
+            try:
+                cocplayer = await self.bot.coc.get_player(player_tag)
+            except NotFound:
                 raise commands.BadArgument(f'Player tag `{player_tag}` not found!')
 
         else:
@@ -89,7 +90,7 @@ class Claim(commands.Cog):
         tag = cocplayer.tag
 
         try:
-            don = cocplayer._achievements.get('Friend in Need').value
+            don = cocplayer.achievements_dict.get('Friend in Need').value
         except AttributeError:
             return await ctx.send('Unknown error occured with COC API. Sorry')
 

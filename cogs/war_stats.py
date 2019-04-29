@@ -271,7 +271,6 @@ class WarStats(commands.Cog):
 
         return per
 
-
     # Main driver function, calculates all values, updates the db, inserts new values
 
     # (IT WILL NOT DO ANYTHING IF THE WAR HASN'T ENDED), so make sure this is
@@ -282,10 +281,9 @@ class WarStats(commands.Cog):
 
         query = "SELECT attack_number FROM temp_stats WHERE enemy_clan_tag = $1"
 
-        current_war = await self.bot.coc.clans(self.CLAN_TAG).currentwar().get(self.bot.coc_token)
-        enemy_clan_tag = current_war['opponent']['tag']
+        current_war = await self.bot.coc.get_current_war(self.CLAN_TAG)
 
-        dump = await self.bot.pool.fetch(query, enemy_clan_tag)
+        dump = await self.bot.pool.fetch(query, current_war.opponent.tag)
         att_orders = [n[0] for n in dump]
 
         query = """INSERT INTO temp_stats 
@@ -298,18 +296,18 @@ class WarStats(commands.Cog):
 
         async def add_attacks(our_hit: bool):
             added = 0
-            if 'attacks' not in member.keys():
+            if not member.attacks:
                 return None
 
-            for attack in member['attacks']:
+            for attack in member.attacks:
 
-                if attack['order'] in att_orders:
+                if attack.order in att_orders:
                     continue
 
-                enemy_th = self.getTownHallLevel(attack['defenderTag'], current_war)
+                enemy_th = self.getTownHallLevel(attack.attacker_tag, current_war)
 
                 await self.bot.pool.execute(query,
-                                            enemy_clan_tag,
+                                            current_war.opponent.tag,
                                             attack['order'],
                                             attack['defenderTag'],
                                             member['tag'],
@@ -323,13 +321,8 @@ class WarStats(commands.Cog):
 
             return added
 
-        for member in current_war['clan']['members']:
-            n = await add_attacks(True)
-            if n:
-                attacks_added += n
-
-        for member in current_war['opponent']['members']:
-            n = await add_attacks(False)
+        for member in current_war.clan._members:
+            n = await add_attacks(not member.is_opponent)
             if n:
                 attacks_added += n
 
@@ -510,8 +503,8 @@ class WarStats(commands.Cog):
         '''Takes in townhall as arguement and gives the stats for that particular townhall level'''
 
         # Query to get details for current war
-        currentMembers = await self.bot.coc.clans(self.CLAN_TAG).members().get(self.bot.coc_token)
-        tags = tuple([x['tag'] for x in currentMembers['items']])
+        currentMembers = await self.bot.coc.get_clan(self.CLAN_TAG)._members
+        tags = tuple([x.tag for x in currentMembers])
 
         # Get all the data for the particular townhall
         result = await self.bot.pool.fetch(f"select name,hitrate,defenserate,tag"
