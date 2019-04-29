@@ -283,7 +283,7 @@ class WarAdmin(commands.Cog):
         # Query to get details for current war
         currentWar = await self.bot.coc.get_current_war(self.CLAN_TAG)
         # Get the list of tags
-        currentTags = [x.tag for x in currentWar.members]
+        currentTags = [x.tag for x in currentWar.members if not x.is_opponent]
 
         # Get a list of tags from last war
         sql = 'select tag from last_war'
