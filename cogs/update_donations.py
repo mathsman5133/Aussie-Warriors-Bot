@@ -139,7 +139,7 @@ class Update(commands.Cog):
         await self.bot.pool.execute(query, True, 13.3, dayofyear)
 
     async def new_avg(self, user_id):
-        query = "SELECT SUM(differences), COUNT(*) FROM claims WHERE userid = $1"
+        query = "SELECT SUM(difference), COUNT(*) FROM claims WHERE userid = $1"
         dump = await self.bot.pool.fetchrow(query, user_id)
 
         average_donations = dump['sum'] / dump['count']
