@@ -503,7 +503,7 @@ class WarStats(commands.Cog):
         '''Takes in townhall as arguement and gives the stats for that particular townhall level'''
 
         # Query to get details for current war
-        currentMembers = await self.bot.coc.get_clan(self.CLAN_TAG)._members
+        currentMembers = (await self.bot.coc.get_clan(self.CLAN_TAG))._members
         tags = tuple([x.tag for x in currentMembers])
 
         # Get all the data for the particular townhall
