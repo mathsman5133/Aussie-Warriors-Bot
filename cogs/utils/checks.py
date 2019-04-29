@@ -1,6 +1,7 @@
 from discord.ext import commands
 
 import re
+import coc
 
 
 class COCError(commands.CheckFailure):
@@ -105,27 +106,15 @@ def clan_status(state: list):
         # Of course if it is in the correct war state it will return True and the command will proceed
 
         bot = ctx.bot
-        clash_call = await bot.coc.clans(bot.AW_CLAN_TAG).currentwar.get(bot.coc_token)
+        try:
+            clash_call = await bot.coc.get_current_war(bot.AW_CLAN_TAG)
+        except (coc.NotFound, coc.Forbidden, coc.InvalidArgument) as e:
+            raise COCError(e.message)
 
-        msg = ''
+        if clash_call.state not in state:
+            raise COCError(f'AW is not currently in the required `{state}` state.\n '
+                            'Please try again later')
 
-        if 'state' in clash_call.keys():
-            if clash_call['state'] not in state:
-                msg += (f'AW is not currently in the required `{state}` state.\n '
-                        'Please try again later')
-            else:
-                return True  # if none of the above occur its all good
-
-        elif 'reason' in clash_call.keys():
-            message_string = re.sub('\d', '\\*', clash_call['message'])  # message may contain ip. obscure that
-            msg += f"Reason: {clash_call['reason']}\nMessage: {message_string}"
-
-        elif not clash_call:
-            msg += "The request returned `None`\nIs it an incorrect token?"
-
-        else:
-            return True  # if none of the above occur its all good
-
-        raise COCError(msg)
+        return True  # if none of the above occur its all good
 
     return commands.check(pred)
