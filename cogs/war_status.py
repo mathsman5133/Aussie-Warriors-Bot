@@ -17,9 +17,6 @@ class WarStatus(commands.Cog):
     BALLOON_ICON_URL = "https://vignette.wikia.nocookie.net/clashofclans/images/" \
                        "2/2f/Balloon_info.png/revision/latest/scale-to-width-down/120?cb=20170927230730"
 
-    def cog_unload(self):
-        asyncio.ensure_future(self.bot.coc.close())
-
     @commands.command()
     async def get_player(self, ctx, tag):
         t = await self.bot.coc.get_player(tag)
