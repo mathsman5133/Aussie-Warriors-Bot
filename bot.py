@@ -9,6 +9,7 @@ import datetime
 import discord
 import aiohttp
 import coc
+from coc.ext import events
 
 import traceback
 
@@ -47,7 +48,7 @@ class AWBot(commands.Bot):
         super().__init__(command_prefix=commands.when_mentioned_or('?'), case_insensitive=True)  # setup bot
         self.remove_command('help')
         self.loaded = creds
-        self.coc = coc.Client(email=creds['cocemail'], password=creds['cocpassword'], key_names='test')
+        self.coc = events.login(email=creds['cocemail'], password=creds['cocpassword'], key_names='test')
 
         for e in initial_extensions:
             try:
@@ -91,6 +92,7 @@ class AWBot(commands.Bot):
             341026885985239051
         ]
         self.AW_CLAN_TAG = '#P0LYJC8C'
+        self.A4W_CLAN_TAG = '#808URP9P'
         self.loaded_extensions = initial_extensions  # for our reload_all command
         self.uptime = datetime.datetime.utcnow()
 

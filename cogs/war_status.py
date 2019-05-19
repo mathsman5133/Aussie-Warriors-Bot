@@ -11,8 +11,24 @@ from coc import CacheType
 class WarStatus(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.bot.coc.set_cache(CacheType.war_logs, CacheType.search_clans, CacheType.cache_search_players, max_size=1024,
+        self.bot.coc.set_cache(CacheType.war_logs, CacheType.search_clans, CacheType.   search_players, max_size=1024,
                                expiry=3600)
+        self.bot.coc.event(self.on_clan_update)
+        self.bot.coc.event(self.on_player_update)
+        self.bot.coc.event(self.on_war_update)
+        self.bot.coc.event(self.on_clan_member_join)
+        self.bot.coc.event(self.on_clan_member_leave)
+        self.bot.coc.event(self.on_war_attack)
+        self.bot.coc.event(self.on_war_state_change)
+
+    @commands.command()
+    async def start_updates(self, ctx):
+        await self.bot.coc.add_clan_update([self.bot.AW_CLAN_TAG, self.bot.A4W_CLAN_TAG], member_updates=True,
+                                           retry_interval=100)
+        await self.bot.coc.add_war_update([self.bot.AW_CLAN_TAG, self.bot.A4W_CLAN_TAG], retry_interval=100)
+        await self.bot.coc.start_updates()
+
+        await ctx.tick()
 
     BALLOON_ICON_URL = "https://vignette.wikia.nocookie.net/clashofclans/images/" \
                        "2/2f/Balloon_info.png/revision/latest/scale-to-width-down/120?cb=20170927230730"
@@ -109,6 +125,9 @@ class WarStatus(commands.Cog):
 
         else:
             try_names = await self.bot.coc.search_clans(name=tag_or_name, limit=5)
+
+        async for clan in self.bot.coc.get_clans([n.tag for n in try_names]):
+            print(clan)
 
         info.extend((emojis[index], try_names[index]) for index in range(0, len(try_names)))
 
@@ -386,6 +405,29 @@ class WarStatus(commands.Cog):
 
         p = FieldPages(ctx, entries=to_paginate, per_page=1)
         await p.paginate()
+
+    async def on_clan_update(self, old_clan, new_clan):
+        await self.bot.get_channel(527373033568993282).send(new_clan.name)
+
+    async def on_player_update(self, old_player, new_player):
+        await self.bot.get_channel(527373033568993282).send(new_player.name)
+
+    async def on_war_update(self, old_war, new_war):
+        await self.bot.get_channel(527373033568993282).send(new_war.clan_tag)
+
+    async def on_clan_member_join(self, member):
+        await self.bot.get_channel(527373033568993282).send(f'New member {member.name} joined clan {member.clan.name}.')
+
+    async def on_clan_member_leave(self, member):
+        await self.bot.get_channel(527373033568993282).send(f'Member {member.name} left clan.')
+
+    async def on_war_state_change(self, state, war):
+        await self.bot.get_channel(527373033568993282).send(f'Clan {war.clan.name} just entered {state} state.')
+
+    async def on_war_attack(self, attack):
+        await self.bot.get_channel(527373033568993282).send(f'New attack: {attack.attacker.name} just attacked '
+                                                            f'{attack.defender.name} for {attack.stars} stars and '
+                                                            f'{attack.destrution}%.')
 
 
 def setup(bot):
