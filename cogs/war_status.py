@@ -11,15 +11,13 @@ from coc import CacheType
 class WarStatus(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.bot.coc.set_cache(CacheType.war_logs, CacheType.search_clans, CacheType.   search_players, max_size=1024,
-                               expiry=3600)
-        self.bot.coc.event(self.on_clan_update)
-        self.bot.coc.event(self.on_player_update)
-        self.bot.coc.event(self.on_war_update)
-        self.bot.coc.event(self.on_clan_member_join)
-        self.bot.coc.event(self.on_clan_member_leave)
-        self.bot.coc.event(self.on_war_attack)
-        self.bot.coc.event(self.on_war_state_change)
+        self.bot.coc.set_cache(CacheType.war_logs, CacheType.search_clans,
+                               CacheType.search_players, CacheType.current_wars,
+                               max_size=1024, expiry=None)
+        self.bot.coc.add_events(self.on_clan_member_join, self.on_clan_update, self.on_clan_member_leave,
+                                self.on_player_update, self.on_war_attack, self.on_war_state_change,
+                                self.on_war_update)
+        self.bot.coc.start_updates('all')
 
     @commands.command()
     async def start_updates(self, ctx):

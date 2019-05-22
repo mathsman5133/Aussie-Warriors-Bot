@@ -9,7 +9,6 @@ import datetime
 import discord
 import aiohttp
 import coc
-from coc.ext import events
 
 import traceback
 
@@ -48,7 +47,7 @@ class AWBot(commands.Bot):
         super().__init__(command_prefix=commands.when_mentioned_or('?'), case_insensitive=True)  # setup bot
         self.remove_command('help')
         self.loaded = creds
-        self.coc = events.login(email=creds['cocemail'], password=creds['cocpassword'], key_names='test')
+        self.coc = coc.login(email=creds['cocemail'], password=creds['cocpassword'], key_names='test')
 
         for e in initial_extensions:
             try:
