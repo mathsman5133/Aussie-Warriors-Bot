@@ -13,14 +13,13 @@ class WarStatus(commands.Cog):
         self.bot.coc.add_events(self.on_clan_member_join, self.on_clan_update, self.on_clan_member_leave,
                                 self.on_player_update, self.on_war_attack, self.on_war_state_change,
                                 self.on_war_update)
-        self.bot.coc.start_updates('all')
 
     @commands.command()
     async def start_updates(self, ctx):
         await self.bot.coc.add_clan_update([self.bot.AW_CLAN_TAG, self.bot.A4W_CLAN_TAG], member_updates=True,
                                            retry_interval=100)
-        await self.bot.coc.add_war_update([self.bot.AW_CLAN_TAG, self.bot.A4W_CLAN_TAG], retry_interval=100)
-        await self.bot.coc.start_updates()
+        self.bot.coc.add_war_update([self.bot.AW_CLAN_TAG, self.bot.A4W_CLAN_TAG], retry_interval=100)
+        self.bot.coc.start_updates('all')
 
         await ctx.tick()
 
