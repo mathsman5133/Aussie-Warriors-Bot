@@ -5,15 +5,11 @@ import dateutil
 import asyncio
 import coc
 from cogs.utils.help import FieldPages
-from coc import CacheType
 
 
 class WarStatus(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.bot.coc.set_cache(CacheType.war_logs, CacheType.search_clans,
-                               CacheType.search_players, CacheType.current_wars,
-                               max_size=1024, expiry=None)
         self.bot.coc.add_events(self.on_clan_member_join, self.on_clan_update, self.on_clan_member_leave,
                                 self.on_player_update, self.on_war_attack, self.on_war_state_change,
                                 self.on_war_update)
