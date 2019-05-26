@@ -417,10 +417,10 @@ class WarStatus(commands.Cog):
     async def on_war_state_change(self, state, war):
         await self.bot.get_channel(527373033568993282).send(f'Clan {war.clan.name} just entered {state} state.')
 
-    async def on_war_attack(self, attack):
+    async def on_war_attack(self, attack, war):
         await self.bot.get_channel(527373033568993282).send(f'New attack: {attack.attacker.name} just attacked '
                                                             f'{attack.defender.name} for {attack.stars} stars and '
-                                                            f'{attack.destrution}%.')
+                                                            f'{attack.destrution}%. in {war.clan.name}')
 
 
 def setup(bot):
