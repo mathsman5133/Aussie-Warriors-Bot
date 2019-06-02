@@ -11,8 +11,14 @@ class WarStatus(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.bot.coc.add_events(self.on_clan_member_join, self.on_clan_update, self.on_clan_member_leave,
-                                self.on_player_update, self.on_war_attack, self.on_war_state_change,
-                                self.on_war_update)
+                                self.on_war_attack, self.on_war_state_change, self.on_war_update,
+                                function_dicts={'on_player_name_change': self.on_player_change,
+                                                'on_player_townhall_upgrade': self.on_player_change,
+                                                'on_player_builderhall_upgrade': self.on_player_change,
+                                                'on_player_achievement_update': self.on_player_change,
+                                                'on_player_troop_upgrade': self.on_player_change,
+                                                'on_player_spell_upgrade': self.on_player_change,
+                                                'on_player_hero_upgrade': self.on_player_change})
 
     @commands.command()
     async def start_updates(self, ctx):
@@ -230,16 +236,16 @@ class WarStatus(commands.Cog):
               f'**Clan Rank:** {member.clan_rank}\n\n'
 
         if isinstance(member, coc.SearchPlayer):
-            aq_lv = member._heroes.get('Archer Queen', 0)
+            aq_lv = member.heroes_dict.get('Archer Queen', 0)
             if aq_lv:
                 aq_lv = aq_lv.level
-            bk_lv = member._heroes.get('Barbarian King', 0)
+            bk_lv = member.heroes_dict.get('Barbarian King', 0)
             if bk_lv:
                 bk_lv = bk_lv.level
-            gw_lv = member._heroes.get('Grand Warden', 0)
+            gw_lv = member.heroes_dict.get('Grand Warden', 0)
             if gw_lv:
                 gw_lv = gw_lv.level
-            bm_lv = member._heroes.get('Battle Machine', 0)
+            bm_lv = member.heroes_dict.get('Battle Machine', 0)
             if bm_lv:
                 bm_lv = bm_lv.level
             fmt += f'**Best Trophies**: {member.best_trophies}\n' \
@@ -400,27 +406,28 @@ class WarStatus(commands.Cog):
         await p.paginate()
 
     async def on_clan_update(self, old_clan, new_clan):
-        await self.bot.get_channel(527373033568993282).send(new_clan.name)
-
-    async def on_player_update(self, old_player, new_player):
-        await self.bot.get_channel(527373033568993282).send(new_player.name)
+        # self.bot.webhook.send(new_clan.name)
+        pass
 
     async def on_war_update(self, old_war, new_war):
-        await self.bot.get_channel(527373033568993282).send(new_war.clan_tag)
+        self.bot.webhook.send(new_war.clan_tag)
 
     async def on_clan_member_join(self, member):
-        await self.bot.get_channel(527373033568993282).send(f'New member {member.name} joined clan {member.clan.name}.')
+        self.bot.webhook.send(f'New member {member.name} joined clan {member.clan.name}.')
 
     async def on_clan_member_leave(self, member):
-        await self.bot.get_channel(527373033568993282).send(f'Member {member.name} left clan.')
+        self.bot.webhook.send(f'Member {member.name} left clan.')
+
+    async def on_player_change(self, old, new, player):
+        self.bot.webhook.send(f'Player update: {player.name}, {old.name}')
 
     async def on_war_state_change(self, state, war):
-        await self.bot.get_channel(527373033568993282).send(f'Clan {war.clan.name} just entered {state} state.')
+        self.bot.webhook.send(f'Clan {war.clan.name} just entered {state} state.')
 
     async def on_war_attack(self, attack, war):
-        await self.bot.get_channel(527373033568993282).send(f'New attack: {attack.attacker.name} just attacked '
-                                                            f'{attack.defender.name} for {attack.stars} stars and '
-                                                            f'{attack.destruction}%. in {war.clan.name}')
+        self.bot.webhook.send(f'New attack: {attack.attacker.name} just attacked '
+                              f'{attack.defender.name} for {attack.stars} stars and '
+                              f'{attack.destruction}%. in {war.clan.name}')
 
 
 def setup(bot):
